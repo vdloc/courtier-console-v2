@@ -1,10 +1,11 @@
 import { Canvas, type ThreeEvent } from '@react-three/fiber';
 import { Edges, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useMemo } from 'react';
-import { DoubleSide } from 'three';
+import { DoubleSide, type Plane } from 'three';
 import { BAY_X, BAY_Y, PARTS, STOREY, type Part } from './model';
 import { PALETTE, ROLE_BY_KIND } from './palette';
 import { Dimension } from './Dimension';
+import { useSectionPlanes } from './useSectionPlanes';
 import { useAppStore } from '../store/useAppStore';
 import type { CameraShot } from '../store/types';
 
@@ -36,7 +37,7 @@ function explodedPosition(part: Part, factor: number): [number, number, number] 
   ];
 }
 
-function Member({ part }: { part: Part }) {
+function Member({ part, planes }: { part: Part; planes: Plane[] }) {
   const select = useAppStore((s) => s.select);
   const isSelected = useAppStore((s) => s.selected?.id === part.id);
   const exploded = useAppStore((s) => s.exploded);
@@ -56,6 +57,7 @@ function Member({ part }: { part: Part }) {
   // Translucent is the reference's default reading for structure; services
   // stay opaque so they read as objects inside the glass.
   const transparent = role === 'translucent' && !isSelected;
+  const clipped = planes.length > 0;
 
   return (
     <mesh
@@ -72,11 +74,14 @@ function Member({ part }: { part: Part }) {
         opacity={transparent ? 0.3 : 1}
         depthWrite={!transparent}
         side={DoubleSide}
+        clippingPlanes={planes}
       />
       <Edges
         threshold={15}
         color={isSelected ? PALETTE.select : PALETTE.edge}
         lineWidth={isSelected ? 2 : 1}
+        clippingPlanes={planes}
+        clipping={clipped}
       />
     </mesh>
   );
@@ -86,6 +91,7 @@ function Model() {
   const layers = useAppStore((s) => s.layers);
   const hidden = useAppStore((s) => s.hidden);
   const progress = useAppStore((s) => s.progress);
+  const planes = useSectionPlanes();
 
   const visible = useMemo(
     () =>
@@ -101,7 +107,7 @@ function Model() {
   return (
     <group>
       {visible.map((p) => (
-        <Member key={p.id} part={p} />
+        <Member key={p.id} part={p} planes={planes} />
       ))}
     </group>
   );
@@ -153,6 +159,9 @@ export function DiagramScene() {
     <Canvas
       dpr={[1, 2]}
       gl={{ antialias: true, preserveDrawingBuffer: true }}
+      onCreated={({ gl }) => {
+        gl.localClippingEnabled = true;
+      }}
       onPointerMissed={() => useAppStore.getState().select(null)}
       style={{ background: PALETTE.canvas }}
     >

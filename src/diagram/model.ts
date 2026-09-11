@@ -145,6 +145,27 @@ export function buildParts(): Part[] {
 
 export const PARTS = buildParts();
 
+export interface Bounds {
+  min: [number, number, number];
+  max: [number, number, number];
+}
+
+function computeBounds(parts: Part[]): Bounds {
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  parts.forEach((p) => {
+    for (let axis = 0; axis < 3; axis++) {
+      const half = p.size[axis] / 2;
+      min[axis] = Math.min(min[axis], p.position[axis] - half);
+      max[axis] = Math.max(max[axis], p.position[axis] + half);
+    }
+  });
+  return { min, max };
+}
+
+/** World extent of every part, for anything that needs to map 0..1 to a coordinate (section plane). */
+export const BOUNDS = computeBounds(PARTS);
+
 const DENSITY: Record<Part['kind'], number> = {
   foundation: 2400,
   column: 7850,
