@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Icon, Input } from '../ui/primitives';
 import type { Status, TreeNode } from '../store/types';
 import { useAppStore } from '../store/useAppStore';
@@ -63,6 +63,15 @@ export function ObjectTree() {
     [tree, collapsed, filter],
   );
 
+  // A viewport click can select a row that is scrolled far out of sight.
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!selected) return;
+    scroller.current
+      ?.querySelector('[data-selected="true"]')
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [selected, rows]);
+
   return (
     <section className={`${panels.section} ${panels.grow}`}>
       <header className={panels.header}>
@@ -94,7 +103,7 @@ export function ObjectTree() {
         />
       </div>
 
-      <div className={panels.scroll}>
+      <div className={panels.scroll} ref={scroller}>
         {rows.map(({ node, depth, hasChildren }) => {
           const isHidden = hidden.has(node.id);
           const isLocked = locked.has(node.id);
@@ -127,9 +136,11 @@ export function ObjectTree() {
               </span>
               <span
                 className={`${styles.label} ${
-                  node.kind === 'level' ? styles.level
-                  : node.kind === 'system' ? styles.system
-                  : ''
+                  node.kind === 'level'
+                    ? styles.level
+                    : node.kind === 'system'
+                      ? styles.system
+                      : ''
                 }`}
               >
                 {node.label}

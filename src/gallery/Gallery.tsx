@@ -174,7 +174,13 @@ export function Gallery() {
 
       <Section title="Fields">
         <FormGrid columns={2}>
-          <Field label={<><MathLabel symbol="A" /> Overhang</>}>
+          <Field
+            label={
+              <>
+                <MathLabel symbol="A" /> Overhang
+              </>
+            }
+          >
             {(id) => (
               <UnitInput
                 id={id}

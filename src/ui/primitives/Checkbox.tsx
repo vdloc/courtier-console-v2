@@ -10,7 +10,12 @@ export interface CheckboxRowProps {
 }
 
 /** Radix supplies the behaviour; the tick and the box are ours. */
-export function CheckboxRow({ checked, onCheckedChange, label, meta }: CheckboxRowProps) {
+export function CheckboxRow({
+  checked,
+  onCheckedChange,
+  label,
+  meta,
+}: CheckboxRowProps) {
   const id = useId();
   return (
     <div className={styles.row}>

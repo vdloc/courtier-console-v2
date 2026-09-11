@@ -13,7 +13,11 @@ const SHOTS: { id: CameraShot; label: string }[] = [
 ];
 
 const MODES: { id: ViewMode; label: string; hint: string }[] = [
-  { id: 'realistic', label: 'Realistic', hint: 'Full materials, shadows, depth of field' },
+  {
+    id: 'realistic',
+    label: 'Realistic',
+    hint: 'Full materials, shadows, depth of field',
+  },
   { id: 'engineering', label: 'Engineering', hint: 'Flat colour by element type' },
   { id: 'analysis', label: 'Analysis', hint: 'Shaded by load path' },
   { id: 'construction', label: 'Construction', hint: 'Ghosted ahead of the sequence' },

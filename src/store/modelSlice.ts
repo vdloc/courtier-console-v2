@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { ComponentInfo, LayerName, TreeNode } from './types';
 import { LAYERS } from './types';
 import { INITIAL_LAYERS, MOCK_COMPONENTS, MOCK_TREE } from '../lib/mockData';
+import { ANCESTORS } from '../diagram/model';
 
 export interface ModelSlice {
   projectName: string;
@@ -33,7 +34,9 @@ function allComponentIds(node: TreeNode, acc: string[] = []): string[] {
   return acc;
 }
 
-export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (set) => ({
+export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
+  set,
+) => ({
   projectName: MOCK_TREE.label,
   tree: MOCK_TREE,
   filter: '',
@@ -52,7 +55,15 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (s
       else next.add(id);
       return { collapsed: next };
     }),
-  select: (id) => set({ selected: id ? (MOCK_COMPONENTS[id] ?? null) : null }),
+  // Selecting anywhere opens the explorer down to the row, so a viewport click
+  // and a tree click leave the panel in the same state.
+  select: (id) =>
+    set((s) => {
+      if (!id) return { selected: null };
+      const collapsed = new Set(s.collapsed);
+      (ANCESTORS[id] ?? []).forEach((a) => collapsed.delete(a));
+      return { selected: MOCK_COMPONENTS[id] ?? null, collapsed };
+    }),
   hover: (hovered) => set({ hovered }),
   setHidden: (id, hidden) =>
     set((s) => {

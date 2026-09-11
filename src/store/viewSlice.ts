@@ -1,11 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type {
-  CameraShot,
-  Quality,
-  SectionAxis,
-  ViewMode,
-  Viewpoint,
-} from './types';
+import type { CameraShot, Quality, SectionAxis, ViewMode, Viewpoint } from './types';
 import { MOCK_VIEWPOINTS } from '../lib/mockData';
 
 export interface ViewSlice {

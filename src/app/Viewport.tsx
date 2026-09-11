@@ -1,15 +1,9 @@
 import { Chip } from '../ui/primitives';
+import { DiagramScene } from '../diagram/DiagramScene';
+import { PARTS } from '../diagram/model';
 import { useAppStore } from '../store/useAppStore';
 import styles from './Viewport.module.css';
 
-const STATS: [string, string][] = [
-  ['Objects', '3,362'],
-  ['Triangles', '435,896'],
-  ['Draw calls', '78'],
-  ['Frame', '16.7 ms'],
-];
-
-/** The seam the diagram renderer plugs into at milestone 2. */
 export function Viewport() {
   const mode = useAppStore((s) => s.mode);
   const shot = useAppStore((s) => s.shot);
@@ -17,10 +11,20 @@ export function Viewport() {
   const measuring = useAppStore((s) => s.measuring);
   const sectionEnabled = useAppStore((s) => s.sectionEnabled);
   const exploded = useAppStore((s) => s.exploded);
+  const hidden = useAppStore((s) => s.hidden);
+  const layers = useAppStore((s) => s.layers);
+
+  const shown = PARTS.filter((p) => layers[p.layer] && !hidden.has(p.id)).length;
+
+  const stats: [string, string][] = [
+    ['Parts drawn', String(shown)],
+    ['Parts total', String(PARTS.length)],
+    ['Hidden', String(hidden.size)],
+  ];
 
   return (
     <div className={styles.host}>
-      <div className={styles.grid} />
+      <DiagramScene />
 
       <div className={styles.overlay}>
         <Chip tone="neutral">{mode}</Chip>
@@ -30,15 +34,9 @@ export function Viewport() {
         {exploded && <Chip tone="warn">exploded</Chip>}
       </div>
 
-      <div className={styles.placeholder}>
-        <span className={styles.badge}>Diagram viewport</span>
-        Translucent solids, blue edges and orange reinforcement land here at
-        milestone&nbsp;2.
-      </div>
-
       {showStats && (
         <div className={styles.stats}>
-          {STATS.map(([label, value]) => (
+          {stats.map(([label, value]) => (
             <div key={label} className={styles.statRow}>
               <span className={styles.statLabel}>{label}</span>
               <span className={styles.statValue}>{value}</span>

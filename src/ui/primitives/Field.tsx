@@ -14,7 +14,10 @@ export function Field({ label, hint, error, required, span, children }: FieldPro
   const id = useId();
   return (
     <div className={`${styles.field} ${span ? styles.span : ''}`}>
-      <label className={`${styles.label} ${required ? styles.required : ''}`} htmlFor={id}>
+      <label
+        className={`${styles.label} ${required ? styles.required : ''}`}
+        htmlFor={id}
+      >
         {label}
       </label>
       {children(id)}
@@ -34,8 +37,10 @@ export interface FormGridProps {
 
 export function FormGrid({ columns = 2, children }: FormGridProps) {
   const cls =
-    columns === 1 ? `${styles.grid} ${styles.grid1}`
-    : columns === 3 ? `${styles.grid} ${styles.grid3}`
-    : styles.grid;
+    columns === 1
+      ? `${styles.grid} ${styles.grid1}`
+      : columns === 3
+        ? `${styles.grid} ${styles.grid3}`
+        : styles.grid;
   return <div className={cls}>{children}</div>;
 }

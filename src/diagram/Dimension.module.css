@@ -1,0 +1,11 @@
+.label {
+  padding: 1px 4px;
+  border-radius: 2px;
+  /* The rule runs under the text; a plate of canvas keeps the label legible. */
+  background: var(--canvas);
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
