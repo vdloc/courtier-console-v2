@@ -1,0 +1,139 @@
+/* Shared chrome for every docked panel. One file because the rules are the
+   same everywhere; the panels differ in content, not in framing. */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-height: 200px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 30px;
+  padding: 0 var(--s3);
+  background: var(--sunken);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.title {
+  color: var(--text-dim);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.link {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--fs-label);
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.body {
+  padding: var(--s2) var(--s3);
+}
+
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.count {
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.empty {
+  padding: var(--s5) var(--s3);
+  color: var(--text-faint);
+  font-size: var(--fs-small);
+  text-align: center;
+}
+
+.buttonRow {
+  display: flex;
+  gap: var(--s1);
+}
+
+.buttonGrid {
+  display: grid;
+  gap: var(--s1);
+}
+
+.cols2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cols3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cols4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* A compact toggle button, used for shots, tools and section axes. */
+.pick {
+  height: 28px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--raised);
+  color: var(--text-dim);
+  font-size: var(--fs-small);
+  cursor: pointer;
+}
+
+.pick:hover {
+  background: var(--sunken);
+  color: var(--text);
+}
+
+.pick[data-active='true'] {
+  border-color: var(--primary);
+  background: var(--primary-wash);
+  color: var(--primary);
+  font-weight: var(--weight-medium);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.hint {
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+  line-height: var(--leading-base);
+}

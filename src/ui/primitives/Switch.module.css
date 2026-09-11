@@ -1,0 +1,44 @@
+.root {
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  cursor: pointer;
+}
+
+.root[data-state='checked'] {
+  background: var(--primary);
+}
+
+.root:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--raised);
+  translate: 2px 0;
+  transition: translate 120ms ease;
+}
+
+.thumb[data-state='checked'] {
+  translate: 18px 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.label {
+  color: var(--text);
+  font-size: var(--fs-body);
+}

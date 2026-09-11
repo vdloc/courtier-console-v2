@@ -1,0 +1,27 @@
+.base {
+  padding: var(--s3);
+  border-radius: var(--radius);
+  font-size: var(--fs-small);
+  line-height: var(--leading-base);
+}
+
+.title {
+  display: block;
+  margin-bottom: var(--s1);
+  font-weight: var(--weight-bold);
+}
+
+.warn {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.info {
+  background: var(--primary-wash);
+  color: var(--primary-hover);
+}
+
+.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}

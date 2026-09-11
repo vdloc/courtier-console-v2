@@ -1,0 +1,57 @@
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--raised);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.base:hover:not(:disabled) {
+  background: var(--sunken);
+  color: var(--text);
+}
+
+.base[data-active='true'] {
+  background: var(--primary-wash);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.base:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* On the navy app bar there is no border and no light surface to sit on. */
+.onDark {
+  width: 26px;
+  height: 26px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-on-dark);
+}
+
+.onDark:hover:not(:disabled) {
+  background: var(--navy-hover);
+  color: var(--text-on-dark);
+}
+
+.badge {
+  position: relative;
+}
+
+.badge::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+}

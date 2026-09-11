@@ -1,0 +1,55 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  height: var(--appbar-h);
+  padding: 0 var(--s3);
+  background: var(--navy);
+  color: var(--text-on-dark);
+}
+
+.name {
+  font-size: var(--fs-h2);
+  font-weight: var(--weight-medium);
+}
+
+.meta,
+.revision {
+  color: var(--text-on-dark-dim);
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-label);
+}
+
+.rule {
+  width: 1px;
+  height: 16px;
+  background: var(--text-on-dark-dim);
+  opacity: 0.4;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.export {
+  height: 22px;
+  padding: 0 var(--s3);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-on-dark);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.export:hover {
+  background: var(--accent-hover);
+}
+
+@media (max-width: 1100px) {
+  .meta,
+  .rule {
+    display: none;
+  }
+}

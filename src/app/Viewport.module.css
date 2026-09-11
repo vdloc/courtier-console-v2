@@ -1,0 +1,74 @@
+/* The diagram canvas is WHITE, per the reference — not a dark viewport.
+   Milestone 2 mounts the renderer here; the framing is already final. */
+.host {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  background: var(--canvas);
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--border-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border-soft) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.6;
+}
+
+.placeholder {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--text-faint);
+  font-size: var(--fs-small);
+}
+
+.badge {
+  padding: var(--s1) var(--s3);
+  border-radius: var(--radius-pill);
+  background: var(--primary-wash);
+  color: var(--primary);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+}
+
+.overlay {
+  position: absolute;
+  top: var(--s3);
+  left: var(--s3);
+  display: flex;
+  gap: var(--s2);
+}
+
+.stats {
+  position: absolute;
+  right: var(--s3);
+  bottom: var(--s3);
+  min-width: 180px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--raised);
+  box-shadow: var(--shadow-card);
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  font-size: var(--fs-label);
+}
+
+.statLabel {
+  color: var(--text-dim);
+}
+
+.statValue {
+  color: var(--text);
+  font-weight: var(--weight-medium);
+}

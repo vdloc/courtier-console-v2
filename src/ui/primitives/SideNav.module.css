@@ -1,0 +1,91 @@
+.nav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding-bottom: var(--s4);
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+}
+
+.sectionLabel {
+  padding: var(--s4) var(--s3) var(--s1);
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  min-height: var(--row-h);
+  padding: 0 var(--s3);
+  border: none;
+  /* The active row carries a blue bar; every row reserves its width so the
+     label does not shift by 3px when selection moves. */
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--fs-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--sunken);
+  color: var(--text);
+}
+
+.item[data-active='true'] {
+  border-left-color: var(--primary);
+  background: var(--primary-wash);
+  color: var(--primary);
+  font-weight: var(--weight-medium);
+}
+
+.icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: currentcolor;
+}
+
+.text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  min-height: var(--row-h);
+  padding: 0 var(--s3);
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--fs-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.groupHeader:hover {
+  color: var(--text);
+}
+
+.caret {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--text-faint);
+}
+
+.child {
+  padding-left: var(--s6);
+  font-size: var(--fs-small);
+}

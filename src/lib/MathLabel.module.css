@@ -1,0 +1,8 @@
+.symbol {
+  font-family: var(--math);
+  font-style: italic;
+}
+
+.sub {
+  font-style: normal;
+}

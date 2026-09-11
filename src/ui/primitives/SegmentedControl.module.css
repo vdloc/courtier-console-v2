@@ -1,0 +1,27 @@
+.track {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--sunken);
+}
+
+.option {
+  height: 26px;
+  padding: 0 var(--s4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--fs-small);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.option:hover {
+  color: var(--text);
+}
+
+.option[data-active='true'] {
+  background: var(--primary);
+  color: var(--text-on-dark);
+}

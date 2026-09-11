@@ -1,0 +1,90 @@
+.mode {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: var(--s2);
+  margin-bottom: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--raised);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode:hover {
+  background: var(--sunken);
+}
+
+.mode[data-active='true'] {
+  border-color: var(--primary);
+  background: var(--primary-wash);
+}
+
+.modeLabel {
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: var(--weight-medium);
+}
+
+.mode[data-active='true'] .modeLabel {
+  color: var(--primary);
+}
+
+.modeHint {
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+  line-height: var(--leading-base);
+}
+
+.saveRow {
+  display: flex;
+  gap: var(--s2);
+}
+
+.viewpoint {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--row-h);
+  padding: 0 var(--s1);
+  border-radius: var(--radius);
+}
+
+.viewpoint:hover {
+  background: var(--sunken);
+}
+
+.vpName {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--primary);
+  font-size: var(--fs-small);
+  cursor: pointer;
+}
+
+.vpMeta {
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.vpDelete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.vpDelete:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}

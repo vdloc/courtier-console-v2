@@ -1,0 +1,66 @@
+.timeline {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s1);
+  height: 100%;
+  padding: var(--s2) var(--s4);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.title {
+  color: var(--text-dim);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.time {
+  color: var(--text);
+  font-size: var(--fs-small);
+  font-weight: var(--weight-medium);
+}
+
+.phaseName {
+  color: var(--primary);
+  font-size: var(--fs-small);
+}
+
+.track {
+  position: relative;
+}
+
+.marks {
+  position: relative;
+  display: flex;
+  height: 14px;
+}
+
+.mark {
+  position: absolute;
+  padding-left: var(--s1);
+  border-left: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.mark[data-active='true'] {
+  border-left-color: var(--primary);
+  color: var(--primary);
+}

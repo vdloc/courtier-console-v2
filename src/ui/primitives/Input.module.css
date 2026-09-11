@@ -1,0 +1,107 @@
+.input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--raised);
+  font-size: var(--fs-body);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:hover:not(:disabled) {
+  border-color: var(--text-faint);
+}
+
+.input:focus-visible {
+  border-color: var(--primary);
+  outline: 1px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.input:disabled {
+  background: var(--sunken);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+/* Numeric entry reads right-aligned against its unit. */
+.numeric {
+  text-align: right;
+}
+
+/* --- input welded to a unit select: the reference's commonest field --- */
+
+.group {
+  display: flex;
+  width: 100%;
+}
+
+.group .input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Both unit forms share a width so the field's right edge never jogs between
+   a row that offers a unit choice and one that does not. */
+.unit,
+.unitStatic {
+  min-width: 56px;
+}
+
+.unit {
+  flex: 0 0 auto;
+  height: var(--control-h);
+  padding: 0 var(--s5) 0 var(--s2);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  background: var(--sunken);
+  color: var(--text-dim);
+  font-size: var(--fs-small);
+  cursor: pointer;
+  appearance: none;
+}
+
+.unit:hover {
+  color: var(--text);
+}
+
+.unitWrap {
+  position: relative;
+  display: flex;
+}
+
+.unitCaret {
+  position: absolute;
+  top: 50%;
+  right: var(--s2);
+  translate: 0 -50%;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+/* A unit with only one option is a label, not a control. */
+.unitStatic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: var(--control-h);
+  padding: 0 var(--s3);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  background: var(--sunken);
+  color: var(--text-dim);
+  font-size: var(--fs-small);
+}

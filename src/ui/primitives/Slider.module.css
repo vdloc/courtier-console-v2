@@ -1,0 +1,38 @@
+.root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+  touch-action: none;
+  user-select: none;
+}
+
+.rail {
+  position: relative;
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--sunken);
+}
+
+.fill {
+  position: absolute;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+}
+
+.thumb {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-pill);
+  background: var(--raised);
+  cursor: grab;
+}
+
+.thumb:active {
+  cursor: grabbing;
+}

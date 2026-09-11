@@ -1,0 +1,39 @@
+.base {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  height: 20px;
+  padding: 0 var(--s2);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+}
+
+.base::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentcolor;
+}
+
+.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.warn {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.neutral {
+  background: var(--sunken);
+  color: var(--text-dim);
+}

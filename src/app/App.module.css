@@ -1,0 +1,69 @@
+/* Five regions, as in the previous project: the layout was the part of it that
+   worked. Panels draw their own borders here — the dark theme's 1px-gap trick
+   relies on every seam being one colour, which a light theme does not give. */
+.app {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: var(--panel-left-w) minmax(0, 1fr) var(--panel-right-w);
+  grid-template-rows: var(--appbar-h) minmax(0, 1fr) var(--bottombar-h);
+  grid-template-areas:
+    'top    top    top'
+    'left   view   right'
+    'bottom bottom bottom';
+  background: var(--canvas);
+}
+
+.top {
+  grid-area: top;
+}
+
+.left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* Two independent scroll regions: one scroller collapses the tree to a row. */
+.controls {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.view {
+  grid-area: view;
+  min-width: 0;
+  min-height: 0;
+}
+
+.right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.bottom {
+  grid-area: bottom;
+}
+
+@media (max-width: 1280px) {
+  .app {
+    grid-template-columns: var(--panel-left-w) minmax(0, 1fr);
+    grid-template-areas:
+      'top    top'
+      'left   view'
+      'bottom bottom';
+  }
+
+  .right {
+    display: none;
+  }
+}

@@ -1,0 +1,36 @@
+.wrap {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--s6) 0 var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--raised);
+  font-size: var(--fs-body);
+  cursor: pointer;
+  appearance: none;
+}
+
+.select:hover:not(:disabled) {
+  border-color: var(--text-faint);
+}
+
+.select:disabled {
+  background: var(--sunken);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.caret {
+  position: absolute;
+  top: 50%;
+  right: var(--s3);
+  translate: 0 -50%;
+  color: var(--text-faint);
+  pointer-events: none;
+}

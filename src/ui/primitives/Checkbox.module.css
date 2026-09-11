@@ -1,0 +1,41 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--row-h);
+  padding: 0 var(--s1);
+}
+
+.box {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--raised);
+  cursor: pointer;
+}
+
+.box[data-state='checked'] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--text-on-dark);
+}
+
+.label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-body);
+  cursor: pointer;
+}
+
+.count {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
