@@ -27,7 +27,10 @@ const AXES: SectionAxis[] = ['x', 'y', 'z'];
 
 export function ViewControls() {
   const shot = useAppStore((s) => s.shot);
-  const setShot = useAppStore((s) => s.setShot);
+  const requestShot = useAppStore((s) => s.requestShot);
+  const requestReset = useAppStore((s) => s.requestReset);
+  const requestFitModel = useAppStore((s) => s.requestFitModel);
+  const requestFocusSelected = useAppStore((s) => s.requestFocusSelected);
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
   const exploded = useAppStore((s) => s.exploded);
@@ -70,17 +73,22 @@ export function ViewControls() {
                 type="button"
                 className={styles.pick}
                 data-active={shot === s.id ? 'true' : undefined}
-                onClick={() => setShot(s.id)}
+                onClick={() => requestShot(s.id)}
               >
                 {s.label}
               </button>
             ))}
           </div>
           <div className={`${styles.buttonGrid} ${styles.cols2}`}>
-            <button type="button" className={styles.pick}>
+            <button type="button" className={styles.pick} onClick={requestFitModel}>
               Fit model
             </button>
-            <button type="button" className={styles.pick} disabled={!selected}>
+            <button
+              type="button"
+              className={styles.pick}
+              disabled={!selected}
+              onClick={requestFocusSelected}
+            >
               Focus selected
             </button>
             <button
@@ -107,7 +115,7 @@ export function ViewControls() {
             >
               Statistics
             </button>
-            <button type="button" className={styles.pick}>
+            <button type="button" className={styles.pick} onClick={requestReset}>
               Reset view
             </button>
           </div>

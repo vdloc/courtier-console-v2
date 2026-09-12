@@ -1,5 +1,12 @@
 import type { StateCreator } from 'zustand';
-import type { CameraShot, Quality, SectionAxis, ViewMode, Viewpoint } from './types';
+import type {
+  CameraRequestKind,
+  CameraShot,
+  Quality,
+  SectionAxis,
+  ViewMode,
+  Viewpoint,
+} from './types';
 import { MOCK_VIEWPOINTS } from '../lib/mockData';
 
 export interface ViewSlice {
@@ -18,8 +25,19 @@ export interface ViewSlice {
 
   viewpoints: Viewpoint[];
 
+  /**
+   * What the camera should do next, plus a nonce that always changes — even a
+   * re-click of the active shot must retrigger the move, and a changed nonce
+   * is the only thing guaranteed to differ every time.
+   */
+  cameraRequestKind: CameraRequestKind | null;
+  cameraRequestNonce: number;
+
   setMode: (mode: ViewMode) => void;
-  setShot: (shot: CameraShot) => void;
+  requestShot: (shot: CameraShot) => void;
+  requestReset: () => void;
+  requestFitModel: () => void;
+  requestFocusSelected: () => void;
   setQuality: (quality: Quality) => void;
   toggleExplode: () => void;
   setExplodeFactor: (v: number) => void;
@@ -49,8 +67,31 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
 
   viewpoints: MOCK_VIEWPOINTS,
 
+  cameraRequestKind: null,
+  cameraRequestNonce: 0,
+
   setMode: (mode) => set({ mode }),
-  setShot: (shot) => set({ shot }),
+  requestShot: (shot) =>
+    set((s) => ({
+      shot,
+      cameraRequestKind: 'shot',
+      cameraRequestNonce: s.cameraRequestNonce + 1,
+    })),
+  requestReset: () =>
+    set((s) => ({
+      cameraRequestKind: 'reset',
+      cameraRequestNonce: s.cameraRequestNonce + 1,
+    })),
+  requestFitModel: () =>
+    set((s) => ({
+      cameraRequestKind: 'fit',
+      cameraRequestNonce: s.cameraRequestNonce + 1,
+    })),
+  requestFocusSelected: () =>
+    set((s) => ({
+      cameraRequestKind: 'focus',
+      cameraRequestNonce: s.cameraRequestNonce + 1,
+    })),
   setQuality: (quality) => set({ quality }),
   toggleExplode: () => set((s) => ({ exploded: !s.exploded })),
   setExplodeFactor: (explodeFactor) => set({ explodeFactor }),

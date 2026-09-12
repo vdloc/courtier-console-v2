@@ -17,6 +17,7 @@ export type LayerName = (typeof LAYERS)[number];
 export type Discipline = 'STR' | 'ARC' | 'MEP' | 'TMP';
 export type ViewMode = 'realistic' | 'engineering' | 'analysis' | 'construction';
 export type CameraShot = 'front' | 'side' | 'iso' | 'joint';
+export type CameraRequestKind = 'shot' | 'reset' | 'fit' | 'focus';
 export type Quality = 'high' | 'balanced' | 'performance';
 export type SectionAxis = 'x' | 'y' | 'z';
 export type MeasureMode = 'distance' | 'horizontal' | 'vertical' | 'angle' | 'area';

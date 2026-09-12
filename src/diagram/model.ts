@@ -145,6 +145,36 @@ export function buildParts(): Part[] {
 
 export const PARTS = buildParts();
 
+export const PARTS_BY_ID: Record<string, Part> = Object.fromEntries(
+  PARTS.map((p) => [p.id, p]),
+);
+
+/** The order the timeline names: foundations, columns, beams, then services. */
+export const BUILD_ORDER: Record<Part['kind'], number> = {
+  foundation: 0,
+  column: 1,
+  beam_x: 2,
+  beam_y: 2,
+  pipe: 3,
+};
+
+/**
+ * The single visibility rule. The scene and the Statistics panel must both
+ * call this — a second copy of the rule is how BUG-2 happened.
+ */
+export function isPartVisible(
+  part: Part,
+  layers: Record<LayerName, boolean>,
+  hidden: Set<string>,
+  progress: number,
+): boolean {
+  return (
+    layers[part.layer] &&
+    !hidden.has(part.id) &&
+    BUILD_ORDER[part.kind] / 4 < progress + 0.001
+  );
+}
+
 export interface Bounds {
   min: [number, number, number];
   max: [number, number, number];
@@ -165,6 +195,18 @@ function computeBounds(parts: Part[]): Bounds {
 
 /** World extent of every part, for anything that needs to map 0..1 to a coordinate (section plane). */
 export const BOUNDS = computeBounds(PARTS);
+
+export const CENTRE: [number, number, number] = [2 * BAY_X, STOREY, 1.5 * BAY_Y];
+
+/** Explode pushes each part away from the model centre, lifting with height. */
+export function explodedPosition(part: Part, factor: number): [number, number, number] {
+  const [x, y, z] = part.position;
+  return [
+    x + (x - CENTRE[0]) * factor,
+    y + (y - CENTRE[1]) * factor * 1.6,
+    z + (z - CENTRE[2]) * factor,
+  ];
+}
 
 const DENSITY: Record<Part['kind'], number> = {
   foundation: 2400,
