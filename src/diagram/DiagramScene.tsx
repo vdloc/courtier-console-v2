@@ -60,7 +60,11 @@ const FRAMING: Record<
   }
 > = {
   engineering: { shots: SHOT_POSITION, centre: CENTRE, bounds: BOUNDS },
-  realistic: { shots: REALISTIC_SHOT_POSITION, centre: SHADOW_CENTRE, bounds: MODEL_BOUNDS },
+  realistic: {
+    shots: REALISTIC_SHOT_POSITION,
+    centre: SHADOW_CENTRE,
+    bounds: MODEL_BOUNDS,
+  },
 };
 
 function boxSphere(min: [number, number, number], max: [number, number, number]) {
