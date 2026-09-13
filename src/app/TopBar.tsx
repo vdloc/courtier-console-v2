@@ -1,4 +1,3 @@
-import { IconButton } from '../ui/primitives';
 import { PROJECT_META, REVISION } from '../lib/mockData';
 import { useAppStore } from '../store/useAppStore';
 import styles from './TopBar.module.css';
@@ -13,8 +12,6 @@ export function TopBar() {
       <span className={styles.rule} />
       <span className={styles.revision}>{REVISION}</span>
       <span className={styles.spacer} />
-      <IconButton icon="help" label="Help" tone="onDark" />
-      <IconButton icon="search" label="Search" tone="onDark" />
       <button type="button" className={styles.export}>
         Export view
       </button>

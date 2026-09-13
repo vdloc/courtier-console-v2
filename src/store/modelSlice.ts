@@ -12,13 +12,11 @@ export interface ModelSlice {
   hidden: Set<string>;
   locked: Set<string>;
   selected: ComponentInfo | null;
-  hovered: string | null;
   layers: Record<LayerName, boolean>;
 
   setFilter: (filter: string) => void;
   toggleCollapsed: (id: string) => void;
   select: (id: string | null) => void;
-  hover: (id: string | null) => void;
   setHidden: (id: string, hidden: boolean) => void;
   setLocked: (id: string, locked: boolean) => void;
   isolateSelected: () => void;
@@ -44,7 +42,6 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
   hidden: new Set<string>(),
   locked: new Set<string>(),
   selected: null,
-  hovered: null,
   layers: { ...INITIAL_LAYERS },
 
   setFilter: (filter) => set({ filter }),
@@ -64,7 +61,6 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
       (ANCESTORS[id] ?? []).forEach((a) => collapsed.delete(a));
       return { selected: MOCK_COMPONENTS[id] ?? null, collapsed };
     }),
-  hover: (hovered) => set({ hovered }),
   setHidden: (id, hidden) =>
     set((s) => {
       const next = new Set(s.hidden);

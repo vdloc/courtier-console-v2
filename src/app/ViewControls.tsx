@@ -19,8 +19,6 @@ const MODES: { id: ViewMode; label: string; hint: string }[] = [
     hint: 'Full materials, shadows, depth of field',
   },
   { id: 'engineering', label: 'Engineering', hint: 'Flat colour by element type' },
-  { id: 'analysis', label: 'Analysis', hint: 'Shaded by load path' },
-  { id: 'construction', label: 'Construction', hint: 'Ghosted ahead of the sequence' },
 ];
 
 const AXES: SectionAxis[] = ['x', 'y', 'z'];
@@ -35,8 +33,6 @@ export function ViewControls() {
   const setMode = useAppStore((s) => s.setMode);
   const exploded = useAppStore((s) => s.exploded);
   const toggleExplode = useAppStore((s) => s.toggleExplode);
-  const tour = useAppStore((s) => s.tour);
-  const toggleTour = useAppStore((s) => s.toggleTour);
   const showStats = useAppStore((s) => s.showStats);
   const toggleStats = useAppStore((s) => s.toggleStats);
   const measuring = useAppStore((s) => s.measuring);
@@ -98,14 +94,6 @@ export function ViewControls() {
               onClick={toggleExplode}
             >
               Explode
-            </button>
-            <button
-              type="button"
-              className={styles.pick}
-              data-active={tour ? 'true' : undefined}
-              onClick={toggleTour}
-            >
-              Tour
             </button>
             <button
               type="button"

@@ -2,7 +2,6 @@ import type { StateCreator } from 'zustand';
 import type {
   CameraRequestKind,
   CameraShot,
-  Quality,
   SectionAxis,
   ViewMode,
   Viewpoint,
@@ -12,10 +11,8 @@ import { MOCK_VIEWPOINTS } from '../lib/mockData';
 export interface ViewSlice {
   mode: ViewMode;
   shot: CameraShot;
-  quality: Quality;
   exploded: boolean;
   explodeFactor: number;
-  tour: boolean;
   showStats: boolean;
 
   sectionEnabled: boolean;
@@ -38,10 +35,8 @@ export interface ViewSlice {
   requestReset: () => void;
   requestFitModel: () => void;
   requestFocusSelected: () => void;
-  setQuality: (quality: Quality) => void;
   toggleExplode: () => void;
   setExplodeFactor: (v: number) => void;
-  toggleTour: () => void;
   toggleStats: () => void;
   toggleSection: () => void;
   setSectionAxis: (axis: SectionAxis) => void;
@@ -54,10 +49,8 @@ export interface ViewSlice {
 export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set) => ({
   mode: 'engineering',
   shot: 'iso',
-  quality: 'balanced',
   exploded: false,
   explodeFactor: 0.35,
-  tour: false,
   showStats: false,
 
   sectionEnabled: false,
@@ -92,10 +85,8 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
       cameraRequestKind: 'focus',
       cameraRequestNonce: s.cameraRequestNonce + 1,
     })),
-  setQuality: (quality) => set({ quality }),
   toggleExplode: () => set((s) => ({ exploded: !s.exploded })),
   setExplodeFactor: (explodeFactor) => set({ explodeFactor }),
-  toggleTour: () => set((s) => ({ tour: !s.tour })),
   toggleStats: () => set((s) => ({ showStats: !s.showStats })),
   toggleSection: () => set((s) => ({ sectionEnabled: !s.sectionEnabled })),
   setSectionAxis: (sectionAxis) => set({ sectionAxis }),
