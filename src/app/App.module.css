@@ -54,6 +54,16 @@
   grid-area: bottom;
 }
 
+/* Below 1280px .right leaves the grid and becomes a dismissible overlay —
+   selecting a part must never be a dead end just because the column is gone. */
+.scrim {
+  display: none;
+}
+
+.closeDrawer {
+  display: none;
+}
+
 @media (max-width: 1280px) {
   .app {
     grid-template-columns: var(--panel-left-w) minmax(0, 1fr);
@@ -63,7 +73,47 @@
       'bottom bottom';
   }
 
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: var(--appbar-h) 0 var(--bottombar-h) 0;
+    z-index: 19;
+    border: none;
+    padding: 0;
+    background: var(--scrim);
+  }
+
   .right {
-    display: none;
+    position: fixed;
+    top: var(--appbar-h);
+    right: 0;
+    bottom: var(--bottombar-h);
+    z-index: 20;
+    width: min(360px, 100vw);
+    box-shadow: var(--shadow-modal);
+    transform: translateX(100%);
+    visibility: hidden;
+    /* Closing: slide out, THEN drop from the tab order — visibility switches
+       after the transform finishes, so focus never parks off-screen mid-close. */
+    transition: transform 0.2s ease, visibility 0s linear 0.2s;
+  }
+
+  .right[data-open='true'] {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.2s ease;
+  }
+
+  .closeDrawer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-end;
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    margin: var(--s2) var(--s2) 0 auto;
+    border-radius: var(--radius);
+    background: var(--sunken);
   }
 }
