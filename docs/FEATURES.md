@@ -136,7 +136,7 @@ Cột "Kết quả" dưới đây là của lần chạy này (`e18ac61`), khôn
 
 | # | Tóm tắt lỗi gốc | Sửa ở commit | Kết quả nghiệm lại |
 |---|---|---|---|
-| BUG-1 | Không có đường quay lại góc nhìn cũ sau khi xoay | `ed29795` | **PASS** — bấm lại đúng shot (ISO) đang active sau khi xoay: pixel-diff 44%, không còn là no-op. (Xem BUG-10 mới bên dưới — đích đến của một shot không phải lúc nào cũng chính xác, nhưng cái BUG-1 mô tả — "bấm không xảy ra chuyện gì" — đã hết) |
+| BUG-1 | Không có đường quay lại góc nhìn cũ sau khi xoay | `ed29795` | **PASS** — bấm lại đúng shot (ISO) đang active sau khi xoay: pixel-diff 44%, không còn là no-op |
 | BUG-2 | Statistics nói dối, bỏ qua `progress` | `ed29795` | **PASS** — progress=0: Parts drawn=20, đúng bằng số Foundation tính tay |
 | BUG-3 | Ba nút khác nhau cùng chữ "Show all" | `c5a8093` | **PASS** — Layers giờ là "Hide layers"/"Show layers"; hai nút "Show all" còn lại (Tools, Model explorer) vẫn cố ý gọi cùng `showEverything()` — đây là trùng có chủ đích, không phải lỗi |
 | BUG-4 | Hai display mode hứa suông (Analysis, Construction) | `da1384a` | **PASS** — hai mode giả đã bị xoá; chỉ còn Realistic/Engineering, cả hai đều có tác dụng thật (D8 PASS) |
@@ -170,13 +170,11 @@ researcher từng thấy. Bốn kịch bản, cả bốn chạy trên `e18ac61`:
 3. **Lưu sau khi đổi mode** — **KHÔNG tái hiện được.** Lưu ở Realistic → đổi
    sang Engineering → restore: về đúng Realistic, camera khớp tuyệt đối
    (diff 0%).
-4. **Lưu ở bề rộng dưới 1280px** — **Không kết luận được, có khả năng liên
-   quan BUG-10.** Ở 900px, lưu một shot ("Front") → đổi shot khác → restore:
-   diff ~40% dù đã đợi đủ 2s cả hai đầu. Nhưng mục BUG-10 bên dưới cho thấy
-   ngay cả bấm lại đúng nút shot đó — không dính viewpoint — cũng không hội
-   tụ về đúng một khung hình. Không tách được đây là lỗi riêng của
-   viewpoint-ở-bề-rộng-hẹp hay chỉ là biểu hiện khác của BUG-10. Không gắn
-   đây là "tái hiện được" cho riêng viewpoint.
+4. **Lưu ở bề rộng dưới 1280px** — **KHÔNG tái hiện được.** Ở 900px, lưu
+   "Front" (pose `[14.4, 6.3, 64]`) → đổi sang ISO → restore: pose ra
+   `[14.4235, 6.3172, 63.9841]`, target giống hệt, pixel-diff 4.4%. Lệch
+   ~0.03 đơn vị — nhỏ, không xảy ra ở 1600px cùng thao tác — ghi lại như một
+   quan sát, không phải lỗi. Không yêu cầu truy thêm.
 
 ---
 
@@ -186,39 +184,15 @@ Chạy trên `http://localhost:5173` (Playwright/CDP), Chromium 1600×900 trừ 
 ghi khác. Nghiệm bằng pixel-diff canvas có ngưỡng 10/kênh, luôn kèm control
 không-thao-tác (~0%) và đợi camera ổn định trước khi đọc.
 
-### BUG-10 — Một shot camera không hội tụ về cùng một khung hình mỗi lần bấm (nặng)
+**Ghi chú phương pháp**: "camera có về đúng chỗ cũ không" phải được quyết
+định bằng đọc pose (`camera.position` / `controls.target` / `camera.
+quaternion`), không phải chỉ pixel-diff — pixel-diff một mình, trên một
+page sống lâu qua nhiều thao tác, từng cho ra con số giả 27–44% (một lỗi
+"BUG-10" đã được báo rồi rút lại: hai lần đo pose lại từ đầu, độc lập, đều
+cho pose giống hệt nhau và pixel-diff 0.00% — nguyên nhân con số giả chưa
+xác định được).
 
-Bấm "Front", đợi 2.5–3s cho ổn định (không còn đổi giữa các lần đọc cách
-nhau 200ms), rồi bấm "ISO", đợi ổn định, rồi bấm lại "Front" — khung hình
-lần hai **không khớp** khung hình lần một:
-
-    reload sạch, 1600×900
-    Front (lần 1), đợi 2.5s      → baseline
-    ISO, đợi 2.5s
-    Front (lần 2), đợi 2.5s      → pixel-diff so với baseline: 27–44% (đo lại
-                                    nhiều lần, dao động nhưng luôn lớn)
-
-Mỗi trạng thái tự nó đứng yên tuyệt đối (0% qua nhiều lần đọc cách nhau
-200ms–500ms trong hơn 3 giây liên tục) — đây không phải chưa-ổn-định, mà là
-hai đích đến thật sự khác nhau cho cùng một yêu cầu "Front". Tái hiện được ở
-cả 1600×900 và 900×900, trên bản reload sạch, không dính state nào khác
-(không có gì bị ẩn, không có selection, không explode, không section — đã
-kiểm qua bảng Statistics và các chip overlay trước khi kết luận).
-
-`DiagramScene.tsx` (`flyTo`, dòng ~121–143) đặt đích đến là giá trị tuyệt
-đối cố định — `framing.shots[shot]` và `framing.centre` — không phụ thuộc
-hướng nhìn hiện tại, nên về lý thuyết đích phải giống hệt nhau mỗi lần. Việc
-nó không giống có khả năng nằm ở `OrbitControls` (`enableDamping`,
-`dampingFactor=0.12`, dòng ~268-274): animation set `camera.position` và
-`controls.target` trực tiếp (`camera.position.copy(...)`,
-`controls.target.copy(...)`, dòng ~228-231), không qua API của
-`OrbitControls`, nên trạng thái nội bộ của nó (spherical/velocity) có thể
-không đồng bộ với vị trí camera thật — chưa xác minh được cơ chế chính xác,
-chỉ báo hiện tượng và bằng chứng đo được. Ảnh hưởng tới D1, D2, D3, D7 —
-những mục này chỉ mới nghiệm "có đổi", không nghiệm "đổi đúng và lặp lại
-được", nên vẫn để PASS ở bảng D nhưng gắn lỗi này riêng.
-
-### BUG-11 — Lưu viewpoint trong lúc camera đang bay không lưu điểm đến (vừa)
+### BUG-11 — Lưu viewpoint trong lúc camera đang bay không lưu điểm đến (vừa, chờ quyết định sản phẩm)
 
 Xem BUG-7 follow-up mục 2. Bấm "Fit model" rồi bấm "Save" ngay trong cùng
 một thao tác (không đợi animation ~2s của Fit chạy xong): viewpoint lưu lại
