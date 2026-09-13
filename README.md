@@ -44,9 +44,17 @@ mà không kéo theo canvas.
 Ở Realistic, cây Model explorer đọc thẳng member của GLB (tầng → loại cấu
 kiện → member), còn Engineering vẫn dùng cây sinh từ `model.ts`.
 
+Measure chạy ở cả hai mode. Điểm đo gắn với member của một model, nên đổi mode
+thì xoá hết điểm — giữ lại sẽ ra con số sai mà trông như đúng.
+
 Lỗ hổng đang biết, nói thẳng chứ không giấu:
-- **Measure bị tắt ở Realistic** — nút Tools và nút start trong MeasurePanel
-  đều disable kèm lý do hiển thị. Chưa có cách pick trên mesh GLB.
+- **Tiết diện tròn** (ống, thanh treo, bu lông): ứng viên snap là góc/cạnh
+  bbox, có thể nằm ngoài vật liệu.
+- **Timeline + Measure ở Realistic**: điểm theo pose lúc panel render lần cuối;
+  kéo timeline không cập nhật số đo. Chưa test.
+- **Section + Measure ở Realistic**: chưa test live.
+- Raycast của three không xét `visible`; `isRendered` trong `snapping.ts` là
+  luật duy nhất cho cả select lẫn measure. Đừng lọc hit ở chỗ khác.
 
 ---
 
