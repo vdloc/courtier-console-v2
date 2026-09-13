@@ -4,8 +4,10 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import {
   AnimationMixer,
   type AnimationAction,
+  type BufferGeometry,
   LoopOnce,
   Mesh,
+  MeshStandardMaterial,
   Object3D,
   Vector3,
   type Material,
@@ -20,6 +22,7 @@ import {
   MODEL_URL,
 } from './rig';
 import { useSectionPlanes } from '../useSectionPlanes';
+import { PALETTE } from '../palette';
 import { useAppStore } from '../../store/useAppStore';
 import { LAYERS, type ComponentInfo, type LayerName } from '../../store/types';
 
@@ -317,8 +320,34 @@ export function StructureGlb() {
       material.clippingPlanes = planes;
       material.clipShadows = true;
     }
+    const lit = highlightRef.current;
+    if (lit) lit.mesh.material.clippingPlanes = planes;
     gl.shadowMap.needsUpdate = true;
   }, [planes, gl, scene]);
+
+  // Members share seven materials, so the selected one gets its own tinted clone.
+  const selectedId = useAppStore((s) => s.selected?.id ?? null);
+  const highlightRef = useRef<{
+    mesh: Mesh<BufferGeometry, MeshStandardMaterial>;
+    original: Material;
+  } | null>(null);
+  useEffect(() => {
+    const mesh = selectedId ? scene.getObjectByName(selectedId) : undefined;
+    if (!(mesh instanceof Mesh) || !(mesh.material instanceof MeshStandardMaterial))
+      return;
+    const original = mesh.material;
+    const lit = original.clone();
+    lit.emissive.set(PALETTE.select);
+    lit.emissiveIntensity = 0.6;
+    lit.clippingPlanes = original.clippingPlanes;
+    mesh.material = lit;
+    highlightRef.current = { mesh, original };
+    return () => {
+      mesh.material = original;
+      lit.dispose();
+      highlightRef.current = null;
+    };
+  }, [selectedId, scene]);
 
   return (
     <primitive
