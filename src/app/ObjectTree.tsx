@@ -61,9 +61,7 @@ export function ObjectTree() {
   const selected = useAppStore((s) => s.selected);
   const select = useAppStore((s) => s.select);
   const hidden = useAppStore((s) => s.hidden);
-  const locked = useAppStore((s) => s.locked);
   const setHidden = useAppStore((s) => s.setHidden);
-  const setLocked = useAppStore((s) => s.setLocked);
   const isolateSelected = useAppStore((s) => s.isolateSelected);
   const showEverything = useAppStore((s) => s.showEverything);
 
@@ -176,7 +174,6 @@ export function ObjectTree() {
             {first > 0 && <div style={{ height: first * view.rowH }} aria-hidden />}
             {rows.slice(first, last).map(({ node, depth, hasChildren, open }) => {
               const isHidden = isRowHidden(node.id);
-              const isLocked = locked.has(node.id);
               // Groups are forced open while filtering; collapsing one would be invisible.
               const toggle = () => {
                 if (hasChildren && filter === '') toggleCollapsed(node.id);
@@ -223,12 +220,11 @@ export function ObjectTree() {
                   <button
                     type="button"
                     className={styles.iconToggle}
-                    data-on={isHidden || isLocked ? 'true' : undefined}
+                    data-on={isHidden ? 'true' : undefined}
                     aria-label={isHidden ? 'Show' : 'Hide'}
                     onClick={(e) => {
                       e.stopPropagation();
                       setHidden(node.id, !isHidden);
-                      if (isLocked) setLocked(node.id, false);
                     }}
                   >
                     <Icon name="eye" size={13} />
