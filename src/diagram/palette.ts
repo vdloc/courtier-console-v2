@@ -17,6 +17,10 @@ const TOKENS = [
   '--primary',
   '--canvas',
   '--border-soft',
+  '--lit-key',
+  '--lit-fill',
+  '--lit-fog',
+  '--lit-contact',
 ] as const;
 
 type Token = (typeof TOKENS)[number];
@@ -43,6 +47,11 @@ export const PALETTE = {
   select: t['--primary'],
   canvas: t['--canvas'],
   faint: t['--border-soft'],
+  /** Realistic mode only — measured off the HDRI, see diagram/realistic/rig.ts. */
+  litKey: t['--lit-key'],
+  litFill: t['--lit-fill'],
+  litFog: t['--lit-fog'],
+  litContact: t['--lit-contact'],
 };
 
 export type DiagramRole = 'translucent' | 'solid' | 'service';

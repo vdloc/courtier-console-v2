@@ -1,7 +1,17 @@
-import { Canvas, type ThreeEvent } from '@react-three/fiber';
+import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Edges, OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { useMemo } from 'react';
-import { DoubleSide, type Plane } from 'three';
+import { useEffect, useMemo } from 'react';
+import {
+  AgXToneMapping,
+  DoubleSide,
+  NoToneMapping,
+  PCFSoftShadowMap,
+  SRGBColorSpace,
+  type Material,
+  type Plane,
+} from 'three';
+import { RealisticScene } from './realistic/RealisticScene';
+import { EXPOSURE, SHADOW_CENTRE } from './realistic/rig';
 import { BAY_X, BAY_Y, PARTS, STOREY, type Part } from './model';
 import { PALETTE, ROLE_BY_KIND } from './palette';
 import { Dimension } from './Dimension';
@@ -16,6 +26,18 @@ const SHOT_POSITION: Record<CameraShot, [number, number, number]> = {
   side: [66, STOREY * 1.5, 1.5 * BAY_Y],
   iso: [44, 28, 44],
   joint: [7, 5.5, 7],
+};
+
+/**
+ * The same four shots, framed on the exported model instead of the procedural
+ * one: each is SHADOW_CENTRE plus the offset that shot wants. Reusing the flat
+ * positions would point every one of them at ground the GLB does not stand on.
+ */
+const REALISTIC_SHOT_POSITION: Record<CameraShot, [number, number, number]> = {
+  front: [SHADOW_CENTRE[0], SHADOW_CENTRE[1] + 4, SHADOW_CENTRE[2] + 58],
+  side: [SHADOW_CENTRE[0] + 58, SHADOW_CENTRE[1] + 4, SHADOW_CENTRE[2]],
+  iso: [SHADOW_CENTRE[0] + 34, SHADOW_CENTRE[1] + 22, SHADOW_CENTRE[2] + 38],
+  joint: [SHADOW_CENTRE[0] + 8, SHADOW_CENTRE[1] - 1, SHADOW_CENTRE[2] + 9],
 };
 
 /** The order the timeline names: foundations, columns, beams, then services. */
@@ -152,23 +174,98 @@ function Annotations() {
 
 export function DiagramScene() {
   const shot = useAppStore((s) => s.shot);
+  const mode = useAppStore((s) => s.mode);
   // Realistic is the one mode that hides the drawing furniture.
-  const showDimensions = useAppStore((s) => s.mode !== 'realistic');
+  const realistic = mode === 'realistic';
 
   return (
     <Canvas
       dpr={[1, 2]}
-      gl={{ antialias: true, preserveDrawingBuffer: true }}
-      onCreated={({ gl }) => {
+      shadows={realistic ? { type: PCFSoftShadowMap } : false}
+      gl={{
+        antialias: true,
+        preserveDrawingBuffer: true,
+        /*
+         * Both the curve (in `ToneMappingSwitch`) and this exposure are safe
+         * to set on the renderer only because every render in this app goes
+         * straight to the screen. Introduce a postprocessing composer and
+         * three compiles tone mapping out of the material shader, at which
+         * point this silently stops applying and the curve has to move into
+         * the composer.
+         */
+        toneMappingExposure: realistic ? EXPOSURE : 1,
+      }}
+      onCreated={({ gl, scene, camera }) => {
         gl.localClippingEnabled = true;
+        // Audit handle, DEV only — Vite strips it from production builds.
+        // Without a handle on the renderer an audit can assert that a button
+        // turned blue but not that the draw calls, the tone mapping or the
+        // shadow map behind it actually changed. See the 3d-realism-audit
+        // skill, step 4.
+        if (import.meta.env.DEV) {
+          (window as unknown as { __gl?: unknown }).__gl = { gl, scene, camera };
+        }
+        // Decided explicitly rather than inherited from whatever r169
+        // defaults to, so it is not a silent variable when the realistic
+        // stack is tuned against it.
+        gl.outputColorSpace = SRGBColorSpace;
       }}
       onPointerMissed={() => useAppStore.getState().select(null)}
       style={{ background: PALETTE.canvas }}
     >
-      <PerspectiveCamera makeDefault fov={38} position={SHOT_POSITION[shot]} />
-      <OrbitControls target={CENTRE} makeDefault enableDamping dampingFactor={0.12} />
-      <Model />
-      {showDimensions && <Annotations />}
+      <ToneMappingSwitch realistic={realistic} />
+      {/* The two models do not occupy the same ground. The procedural frame is
+          built outward from the origin; the exported one sits around
+          SHADOW_CENTRE, roughly 20 m away in z. Aiming the controls at the
+          wrong one leaves the structure off to the side of frame — and a
+          viewport click lands on sky, which reads as "selection is broken"
+          rather than "the camera is pointed elsewhere". */}
+      <PerspectiveCamera
+        makeDefault
+        fov={38}
+        position={realistic ? REALISTIC_SHOT_POSITION[shot] : SHOT_POSITION[shot]}
+      />
+      <OrbitControls
+        target={realistic ? SHADOW_CENTRE : CENTRE}
+        makeDefault
+        enableDamping
+        dampingFactor={0.12}
+      />
+      {realistic ? <RealisticScene /> : <Model />}
+      {!realistic && <Annotations />}
     </Canvas>
   );
+}
+
+/**
+ * AgX over ACES for a sunlit exterior: ACES shifts saturated hues toward the
+ * highlights, which turns warm sun on painted steel orange at the hot end. The
+ * flat modes stay untone-mapped — their system colours were chosen by eye
+ * against a linear pipeline, and putting a curve under them now would shift
+ * every one of them.
+ *
+ * Switched from inside the Canvas because `gl` is only reachable through
+ * R3F's context; doing it in `onCreated` alone would leave the curve stuck at
+ * whatever the first-mounted mode wanted. `needsUpdate` is the part that is
+ * easy to miss: three compiles the tone mapping function into each material's
+ * shader, so changing the renderer's mode does nothing to already-built
+ * programs.
+ */
+function ToneMappingSwitch({ realistic }: { realistic: boolean }) {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+
+  useEffect(() => {
+    gl.toneMapping = realistic ? AgXToneMapping : NoToneMapping;
+    gl.toneMappingExposure = realistic ? EXPOSURE : 1;
+    scene.traverse((object) => {
+      const material = (object as { material?: Material | Material[] }).material;
+      if (!material) return;
+      for (const entry of Array.isArray(material) ? material : [material]) {
+        entry.needsUpdate = true;
+      }
+    });
+  }, [gl, scene, realistic]);
+
+  return null;
 }

@@ -14,6 +14,18 @@ export interface ModelSlice {
   selected: ComponentInfo | null;
   hovered: string | null;
   layers: Record<LayerName, boolean>;
+  /**
+   * Members read out of the GLB in realistic mode, keyed by object name.
+   *
+   * The flat modes and the realistic mode render different geometry — 175
+   * procedural boxes against ~3360 exported members — so their ids do not
+   * overlap and neither set can answer for the other. Keeping the GLB's
+   * members here rather than merging them into `MOCK_COMPONENTS` is what lets
+   * `select` serve whichever model is mounted without either one shadowing the
+   * other's ids.
+   */
+  glbComponents: Record<string, ComponentInfo>;
+  registerComponents: (components: Record<string, ComponentInfo>) => void;
 
   setFilter: (filter: string) => void;
   toggleCollapsed: (id: string) => void;
@@ -46,6 +58,9 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
   selected: null,
   hovered: null,
   layers: { ...INITIAL_LAYERS },
+  glbComponents: {},
+
+  registerComponents: (glbComponents) => set({ glbComponents }),
 
   setFilter: (filter) => set({ filter }),
   toggleCollapsed: (id) =>
@@ -62,7 +77,13 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
       if (!id) return { selected: null };
       const collapsed = new Set(s.collapsed);
       (ANCESTORS[id] ?? []).forEach((a) => collapsed.delete(a));
-      return { selected: MOCK_COMPONENTS[id] ?? null, collapsed };
+      // GLB members first: in realistic mode they are the only ids the
+      // viewport can produce, and falling through to the mock set would empty
+      // the panel on every click.
+      return {
+        selected: s.glbComponents[id] ?? MOCK_COMPONENTS[id] ?? null,
+        collapsed,
+      };
     }),
   hover: (hovered) => set({ hovered }),
   setHidden: (id, hidden) =>

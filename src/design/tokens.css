@@ -48,6 +48,18 @@
   --dia-ink: #252b2e;
   --dia-rebar: #da5515;
 
+  /* --- realistic mode lighting, MEASURED OFF env/site_2k.hdr -------------
+     Not design choices. The key is the HDRI's own sun disc, warmed; the fill
+     is its sky; the fog is its horizon band scaled by backgroundIntensity.
+     Re-derive from the file if the HDRI is swapped — see diagram/realistic/
+     rig.ts for the method. */
+  --lit-key: #fff1dc;
+  --lit-fill: #c3d6ea;
+  --lit-fog: #a6acbd;
+  /* Contact shadow tint. Warm, never black: a shadow is the part of a surface
+     lit only by the bounce, and a black one reads as a hole in the ground. */
+  --lit-contact: #2e2419;
+
   /* --- type ------------------------------------------------------------- */
   --sans: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --math: 'KaTeX_Main', 'Latin Modern Math', Georgia, serif;

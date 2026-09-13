@@ -42,7 +42,14 @@ export interface ComponentInfo extends ComponentData {
   name: string;
   /** Longest bounding-box dimension, metres. */
   length: number;
-  mass: number;
+  /**
+   * Absent for members loaded from the GLB: the export carries dimensions but
+   * no mass, and the demo viewer's answer is an ESTIMATE with a stated basis
+   * (`estimateMass`, engineering/PropertyPanel.tsx) rather than a number the
+   * file actually knows. Until that is ported, realistic mode shows no mass
+   * rather than a fabricated one.
+   */
+  mass?: number;
   status: Status;
   layer: LayerName;
   connected: string[];
