@@ -22,6 +22,7 @@ import { useSectionPlanes } from './useSectionPlanes';
 import { firstUnclippedHit, snapToFeature } from './snapping';
 import { useAppStore } from '../store/useAppStore';
 import type { CameraShot } from '../store/types';
+import { PROJECT_NAME, REVISION } from '../lib/mockData';
 
 const SHOT_POSITION: Record<CameraShot, [number, number, number]> = {
   front: [2 * BAY_X, STOREY * 1.5, 64],
@@ -166,6 +167,7 @@ function CameraRig() {
     if (elapsed >= TOTAL_MS) anim.current = null;
   });
 
+
   return (
     <>
       {/* Initial framing only — matches the store's default shot ('iso'). Every
@@ -185,6 +187,48 @@ function CameraRig() {
       />
     </>
   );
+}
+
+function sanitizeForFilename(s: string): string {
+  return s
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * `preserveDrawingBuffer: true` on the Canvas (see below) is what makes this
+ * read anything but a blank frame — without it the buffer clears before
+ * `toDataURL` can read it. Do not remove that flag.
+ *
+ * KaTeX dimension labels are DOM elements (drei `Html`), not canvas pixels —
+ * they will not appear in the exported PNG. That is a real, known limitation;
+ * fixing it needs a different rendering path and is out of scope here.
+ */
+function ExportHandler() {
+  const { gl } = useThree();
+  const exportRequestNonce = useAppStore((s) => s.exportRequestNonce);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    const dataUrl = gl.domElement.toDataURL('image/png');
+    const revision = sanitizeForFilename(REVISION.split('·')[0]);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${sanitizeForFilename(PROJECT_NAME)}_${revision}_${timestamp}.png`;
+
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [exportRequestNonce, gl]);
+
+  return null;
 }
 
 function Member({ part, planes }: { part: Part; planes: Plane[] }) {
@@ -329,6 +373,7 @@ export function DiagramScene() {
       style={{ background: PALETTE.canvas }}
     >
       <CameraRig />
+      <ExportHandler />
       <Model />
       {showDimensions && <Annotations />}
     </Canvas>

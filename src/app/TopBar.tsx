@@ -4,6 +4,7 @@ import styles from './TopBar.module.css';
 
 export function TopBar() {
   const projectName = useAppStore((s) => s.projectName);
+  const requestExport = useAppStore((s) => s.requestExport);
 
   return (
     <header className={styles.bar}>
@@ -12,7 +13,7 @@ export function TopBar() {
       <span className={styles.rule} />
       <span className={styles.revision}>{REVISION}</span>
       <span className={styles.spacer} />
-      <button type="button" className={styles.export}>
+      <button type="button" className={styles.export} onClick={requestExport}>
         Export view
       </button>
     </header>

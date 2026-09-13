@@ -29,12 +29,14 @@ export interface ViewSlice {
    */
   cameraRequestKind: CameraRequestKind | null;
   cameraRequestNonce: number;
+  exportRequestNonce: number;
 
   setMode: (mode: ViewMode) => void;
   requestShot: (shot: CameraShot) => void;
   requestReset: () => void;
   requestFitModel: () => void;
   requestFocusSelected: () => void;
+  requestExport: () => void;
   toggleExplode: () => void;
   setExplodeFactor: (v: number) => void;
   toggleStats: () => void;
@@ -62,6 +64,7 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
 
   cameraRequestKind: null,
   cameraRequestNonce: 0,
+  exportRequestNonce: 0,
 
   setMode: (mode) => set({ mode }),
   requestShot: (shot) =>
@@ -85,6 +88,7 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
       cameraRequestKind: 'focus',
       cameraRequestNonce: s.cameraRequestNonce + 1,
     })),
+  requestExport: () => set((s) => ({ exportRequestNonce: s.exportRequestNonce + 1 })),
   toggleExplode: () => set((s) => ({ exploded: !s.exploded })),
   setExplodeFactor: (explodeFactor) => set({ explodeFactor }),
   toggleStats: () => set((s) => ({ showStats: !s.showStats })),
