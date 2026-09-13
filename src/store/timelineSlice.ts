@@ -13,6 +13,8 @@ export interface TimelineSlice {
   pause: () => void;
   reset: () => void;
   setProgress: (progress: number) => void;
+  /** The playback loop's own path — `setProgress` pausing itself every frame would stop it dead. */
+  tick: (progress: number) => void;
 }
 
 export const createTimelineSlice: StateCreator<TimelineSlice, [], [], TimelineSlice> = (
@@ -23,9 +25,17 @@ export const createTimelineSlice: StateCreator<TimelineSlice, [], [], TimelineSl
   playback: 'finished',
   progress: 1,
 
-  play: () => set({ playback: 'playing' }),
+  // Resuming from a pause continues where it left off; from finished it restarts —
+  // sitting at 1 doing nothing on Play is the bug this button exists to fix.
+  play: () =>
+    set((s) => ({ playback: 'playing', progress: s.progress >= 1 ? 0 : s.progress })),
   pause: () => set({ playback: 'paused' }),
   reset: () => set({ playback: 'idle', progress: 0 }),
   setProgress: (progress) =>
     set({ progress, playback: progress >= 1 ? 'finished' : 'paused' }),
+  tick: (progress) =>
+    set({
+      progress: Math.min(progress, 1),
+      playback: progress >= 1 ? 'finished' : 'playing',
+    }),
 });
