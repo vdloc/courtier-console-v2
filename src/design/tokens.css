@@ -27,7 +27,9 @@
   --border-soft: #e8eaed;
   --text: #202124;
   --text-dim: #5f6368;
-  --text-faint: #80868b;
+  /* DERIVED, not eyeballed against the reference — but AA-checked (4.5:1+)
+     against every surface it sits on, primary-wash being the tightest. */
+  --text-faint: #676c71;
   --text-on-dark: #ffffff;
   --text-on-dark-dim: #b6c6da;
 
