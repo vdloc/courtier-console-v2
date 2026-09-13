@@ -1,7 +1,7 @@
-import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Edges, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
-import { DoubleSide, Vector3, type Plane } from 'three';
+import { DoubleSide, Vector2, Vector3, type Plane } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { PerspectiveCamera as PerspectiveCameraImpl } from 'three';
 import {
@@ -19,6 +19,7 @@ import {
 import { PALETTE, ROLE_BY_KIND } from './palette';
 import { Dimension } from './Dimension';
 import { useSectionPlanes } from './useSectionPlanes';
+import { firstUnclippedHit, snapToFeature } from './snapping';
 import { useAppStore } from '../store/useAppStore';
 import type { CameraShot } from '../store/types';
 
@@ -191,6 +192,9 @@ function Member({ part, planes }: { part: Part; planes: Plane[] }) {
   const isSelected = useAppStore((s) => s.selected?.id === part.id);
   const exploded = useAppStore((s) => s.exploded);
   const explodeFactor = useAppStore((s) => s.explodeFactor);
+  const measuring = useAppStore((s) => s.measuring);
+  const addMeasurePoint = useAppStore((s) => s.addMeasurePoint);
+  const { camera, gl } = useThree();
 
   const role = ROLE_BY_KIND[part.kind] ?? 'solid';
   const position = exploded ? explodedPosition(part, explodeFactor) : part.position;
@@ -214,6 +218,22 @@ function Member({ part, planes }: { part: Part; planes: Plane[] }) {
       position={position}
       onClick={(e: ThreeEvent<MouseEvent>) => {
         e.stopPropagation();
+        if (measuring) {
+          const hit = firstUnclippedHit(e.intersections, planes);
+          if (!hit) return;
+          const cursor = new Vector2(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+          const width = gl.domElement.clientWidth;
+          const height = gl.domElement.clientHeight;
+          const snap = snapToFeature(hit, camera, cursor, width, height, planes);
+          addMeasurePoint({
+            id: crypto.randomUUID(),
+            partId: snap.partId,
+            local: snap.local,
+            world: snap.world,
+            snap: snap.type,
+          });
+          return;
+        }
         select(part.id);
       }}
     >

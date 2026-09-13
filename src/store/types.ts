@@ -60,9 +60,12 @@ export interface TreeNode {
 
 export interface MeasurePoint {
   id: string;
-  snap: 'vertex' | 'edge' | 'face' | 'centre';
-  object: string;
-  xyz: [number, number, number];
+  partId: string;
+  /** Local to the part — rides explode and any future transform. */
+  local: [number, number, number];
+  /** World position at capture; fallback only, for a part the timeline has unmounted. */
+  world: [number, number, number];
+  snap: 'vertex' | 'midpoint' | 'edge' | 'face';
 }
 
 export interface TimelinePhase {

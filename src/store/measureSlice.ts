@@ -1,6 +1,5 @@
 import type { StateCreator } from 'zustand';
 import type { MeasureMode, MeasurePoint } from './types';
-import { MOCK_MEASURE_POINTS } from '../lib/mockData';
 
 export const MODE_POINTS: Record<MeasureMode, number> = {
   distance: 2,
@@ -25,6 +24,7 @@ export interface MeasureSlice {
 
   toggleMeasuring: () => void;
   setMeasureMode: (mode: MeasureMode) => void;
+  addMeasurePoint: (point: MeasurePoint) => void;
   undoMeasurePoint: () => void;
   clearMeasurement: () => void;
 }
@@ -34,10 +34,12 @@ export const createMeasureSlice: StateCreator<MeasureSlice, [], [], MeasureSlice
 ) => ({
   measuring: false,
   measureMode: 'distance',
-  measurePoints: MOCK_MEASURE_POINTS,
+  measurePoints: [],
 
   toggleMeasuring: () => set((s) => ({ measuring: !s.measuring })),
   setMeasureMode: (measureMode) => set({ measureMode, measurePoints: [] }),
+  addMeasurePoint: (point) =>
+    set((s) => ({ measurePoints: [...s.measurePoints, point] })),
   undoMeasurePoint: () => set((s) => ({ measurePoints: s.measurePoints.slice(0, -1) })),
   clearMeasurement: () => set({ measurePoints: [] }),
 });
