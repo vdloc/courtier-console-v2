@@ -18,9 +18,10 @@
  * and picking by screen distance alone silently snaps to the hidden one.
  */
 
-import { Vector2, Vector3 } from 'three';
-import type { Camera, Intersection, Plane } from 'three';
+import { Box3, Mesh, Vector2, Vector3 } from 'three';
+import type { Camera, Intersection, Object3D, Plane } from 'three';
 import { PARTS_BY_ID } from './model';
+import { glbMember } from './realistic/glbMembers';
 
 export type SnapType = 'vertex' | 'midpoint' | 'edge' | 'face';
 
@@ -39,18 +40,37 @@ const _a = new Vector3();
 const _b = new Vector3();
 const _screen = new Vector2();
 
-function boxCorners(half: [number, number, number]): Vector3[] {
-  const [hx, hy, hz] = half;
+function boxCorners({ min: a, max: b }: Box3): Vector3[] {
   return [
-    new Vector3(-hx, -hy, -hz),
-    new Vector3(hx, -hy, -hz),
-    new Vector3(hx, hy, -hz),
-    new Vector3(-hx, hy, -hz),
-    new Vector3(-hx, -hy, hz),
-    new Vector3(hx, -hy, hz),
-    new Vector3(hx, hy, hz),
-    new Vector3(-hx, hy, hz),
+    new Vector3(a.x, a.y, a.z),
+    new Vector3(b.x, a.y, a.z),
+    new Vector3(b.x, b.y, a.z),
+    new Vector3(a.x, b.y, a.z),
+    new Vector3(a.x, a.y, b.z),
+    new Vector3(b.x, a.y, b.z),
+    new Vector3(b.x, b.y, b.z),
+    new Vector3(a.x, b.y, b.z),
   ];
+}
+
+/** The member's own box in local space: procedural size, or the exported mesh's geometry bounds. */
+function localBox(object: Object3D): Box3 | null {
+  const part = PARTS_BY_ID[object.name];
+  if (part) {
+    const half = new Vector3(...part.size).multiplyScalar(0.5);
+    return new Box3(half.clone().negate(), half);
+  }
+  if (!(object instanceof Mesh) || !glbMember(object.name)) return null;
+  if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+  return object.geometry.boundingBox;
+}
+
+/** Drawn only if it and every ancestor are visible; layer toggles hide the group, not the mesh. */
+export function isRendered(object: Object3D): boolean {
+  for (let node: Object3D | null = object; node; node = node.parent) {
+    if (!node.visible) return false;
+  }
+  return true;
 }
 
 const BOX_EDGES: [number, number][] = [
@@ -103,14 +123,15 @@ function passesClip(point: Vector3, planes: Plane[]): boolean {
  * Also skips anything that isn't a named part — the `<Edges>` overlay and the
  * dimension annotations are raycastable and sit exactly on member surfaces, so
  * near a corner they can report a nearer, unnamed hit than the member itself.
+ * The raycaster ignores `visible` too, so hidden and culled members are skipped.
  */
 export function firstUnclippedHit(
   intersections: Intersection[],
   planes: Plane[],
 ): Intersection | null {
   for (const hit of intersections) {
-    if (!PARTS_BY_ID[hit.object.name]) continue;
-    if (passesClip(hit.point, planes)) return hit;
+    if (!PARTS_BY_ID[hit.object.name] && !glbMember(hit.object.name)) continue;
+    if (isRendered(hit.object) && passesClip(hit.point, planes)) return hit;
   }
   return null;
 }
@@ -125,7 +146,7 @@ export function snapToFeature(
   tolerance = SNAP_PIXELS,
 ): SnapResult {
   const object = hit.object;
-  const part = PARTS_BY_ID[object.name];
+  const box = localBox(object);
 
   const faceResult = (): SnapResult => {
     const inverse = object.matrixWorld.clone().invert();
@@ -141,14 +162,9 @@ export function snapToFeature(
     };
   };
 
-  if (!part) return faceResult();
+  if (!box) return faceResult();
 
-  const half: [number, number, number] = [
-    part.size[0] / 2,
-    part.size[1] / 2,
-    part.size[2] / 2,
-  ];
-  const corners = boxCorners(half);
+  const corners = boxCorners(box);
   const worldCorners = corners.map((c) => c.clone().applyMatrix4(object.matrixWorld));
 
   // --- 1. vertices ------------------------------------------------------

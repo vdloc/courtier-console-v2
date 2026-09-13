@@ -1,6 +1,7 @@
+import type { Vector3 } from 'three';
 import { Callout } from '../ui/primitives';
 import type { MeasureMode } from '../store/types';
-import { MEASURE_UNAVAILABLE, MODE_HINTS, MODE_POINTS } from '../store/measureSlice';
+import { MODE_HINTS, MODE_POINTS } from '../store/measureSlice';
 import { evaluate, resolveMeasurePoint } from '../diagram/measurement';
 import { useAppStore } from '../store/useAppStore';
 import panels from './panels.module.css';
@@ -22,12 +23,14 @@ export function MeasurePanel() {
   const points = useAppStore((s) => s.measurePoints);
   const undo = useAppStore((s) => s.undoMeasurePoint);
   const clear = useAppStore((s) => s.clearMeasurement);
-  const realistic = useAppStore((s) => s.mode === 'realistic');
+  // Re-render once the GLB registers its members, so points resolve against them.
+  useAppStore((s) => s.glb);
   const exploded = useAppStore((s) => s.exploded);
   const explodeFactor = useAppStore((s) => s.explodeFactor);
 
   const resolved = points.map((p) => resolveMeasurePoint(p, exploded, explodeFactor));
-  const result = evaluate(mode, resolved);
+  const unresolved = resolved.some((p) => p === null);
+  const result = unresolved ? null : evaluate(mode, resolved as Vector3[]);
   const needed = MODE_POINTS[mode];
 
   return (
@@ -58,17 +61,10 @@ export function MeasurePanel() {
           type="button"
           className={panels.pick}
           data-active={measuring ? 'true' : undefined}
-          disabled={realistic}
-          aria-describedby={realistic ? 'measure-panel-unavailable' : undefined}
           onClick={toggleMeasuring}
         >
           {measuring ? 'Measuring — click to stop' : 'Start measuring'}
         </button>
-        {realistic && (
-          <p id="measure-panel-unavailable" className={panels.hint}>
-            {MEASURE_UNAVAILABLE}
-          </p>
-        )}
 
         <div className={`${panels.buttonGrid} ${panels.cols3}`}>
           {MODES.map((m) => (
@@ -101,9 +97,9 @@ export function MeasurePanel() {
               <span className={styles.object}>{p.partId}</span>
               <span className={styles.xyz}>
                 {resolved[i]
-                  .toArray()
+                  ?.toArray()
                   .map((n) => n.toFixed(3))
-                  .join(', ')}
+                  .join(', ') ?? 'model not loaded'}
               </span>
             </span>
           </div>

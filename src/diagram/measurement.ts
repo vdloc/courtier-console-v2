@@ -9,6 +9,7 @@ import { Vector3 } from 'three';
 import type { MeasureMode, MeasurePoint } from '../store/types';
 import { MODE_POINTS } from '../store/measureSlice';
 import { PARTS_BY_ID, explodedPosition } from './model';
+import { glbLocalToWorld, glbMember } from './realistic/glbMembers';
 
 export interface MeasurementValue {
   value: number;
@@ -23,17 +24,18 @@ export function formatMetres(value: number): string {
 }
 
 /**
- * Falls back to the captured world position when the part no longer renders
- * — a measurement taken against a member the timeline has since hidden still
- * draws, rather than silently vanishing.
+ * Null when the point's member isn't in the model on screen (an exported member
+ * while the GLB is unmounted): a stale world position would read as a real number.
  */
 export function resolveMeasurePoint(
   point: MeasurePoint,
   exploded: boolean,
   explodeFactor: number,
-): Vector3 {
+): Vector3 | null {
+  const member = glbMember(point.partId);
+  if (member) return glbLocalToWorld(member, point.local, exploded ? explodeFactor : 0);
   const part = PARTS_BY_ID[point.partId];
-  if (!part) return new Vector3(...point.world);
+  if (!part) return null;
   const base = exploded ? explodedPosition(part, explodeFactor) : part.position;
   return new Vector3(
     base[0] + point.local[0],

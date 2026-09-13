@@ -9,6 +9,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  Vector2,
   Vector3,
   type Material,
   type Texture,
@@ -22,6 +23,13 @@ import {
   MODEL_URL,
 } from './rig';
 import { useSectionPlanes } from '../useSectionPlanes';
+import { firstUnclippedHit, snapToFeature } from '../snapping';
+import {
+  clearGlbMembers,
+  explodedPosition,
+  registerGlbMembers,
+  type GlbMember,
+} from './glbMembers';
 import { PALETTE } from '../palette';
 import { useAppStore } from '../../store/useAppStore';
 import { LAYERS, type ComponentInfo, type LayerName } from '../../store/types';
@@ -43,10 +51,7 @@ interface GlbExtras {
   connected_objects?: string;
 }
 
-interface MemberRecord {
-  mesh: Mesh;
-  /** Pose the clip gives at the current time, before explode; re-read after every seek. */
-  home: Vector3;
+interface MemberRecord extends GlbMember {
   lod: number | undefined;
 }
 
@@ -57,12 +62,6 @@ const FILTERED_SLOTS = [
   'metalnessMap',
   'aoMap',
 ] as const;
-
-const EXPLODE_CENTRE = new Vector3(
-  (MODEL_BOUNDS.min[0] + MODEL_BOUNDS.max[0]) / 2,
-  (MODEL_BOUNDS.min[1] + MODEL_BOUNDS.max[1]) / 2,
-  (MODEL_BOUNDS.min[2] + MODEL_BOUNDS.max[2]) / 2,
-);
 
 /** Seconds between culling passes; per-frame distance checks would cost more than they save. */
 const CULL_INTERVAL = 0.16;
@@ -119,6 +118,8 @@ export function StructureGlb() {
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
   const select = useAppStore((s) => s.select);
+  const measuring = useAppStore((s) => s.measuring);
+  const addMeasurePoint = useAppStore((s) => s.addMeasurePoint);
   const layers = useAppStore((s) => s.layers);
   const exploded = useAppStore((s) => s.exploded);
   const explodeFactor = useAppStore((s) => s.explodeFactor);
@@ -165,6 +166,7 @@ export function StructureGlb() {
       if (component) components[component.id] = component;
     });
     recordsRef.current = records;
+    registerGlbMembers(records);
     materialsRef.current = [...materials];
 
     // Materials and textures belong to useGLTF's cache, so these writes must stay idempotent.
@@ -217,6 +219,7 @@ export function StructureGlb() {
       mixerRef.current = null;
       actionsRef.current = [];
       recordsRef.current = [];
+      clearGlbMembers();
       materialsRef.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -226,11 +229,7 @@ export function StructureGlb() {
     const store = useAppStore.getState();
     const factor = store.exploded ? store.explodeFactor : 0;
     for (const { mesh, home } of recordsRef.current) {
-      mesh.position.set(
-        home.x + (home.x - EXPLODE_CENTRE.x) * factor,
-        home.y + (home.y - EXPLODE_CENTRE.y) * factor * 1.6,
-        home.z + (home.z - EXPLODE_CENTRE.z) * factor,
-      );
+      explodedPosition(home, factor, mesh.position);
     }
   }
 
@@ -354,7 +353,32 @@ export function StructureGlb() {
       object={scene}
       onClick={(event: ThreeEvent<MouseEvent>) => {
         event.stopPropagation();
-        if (event.object.name) select(event.object.name);
+        const hit = firstUnclippedHit(event.intersections, planes);
+        if (!hit) return;
+        if (!measuring) {
+          select(hit.object.name);
+          return;
+        }
+        const cursor = new Vector2(
+          event.nativeEvent.offsetX,
+          event.nativeEvent.offsetY,
+        );
+        const { clientWidth, clientHeight } = gl.domElement;
+        const snap = snapToFeature(
+          hit,
+          camera,
+          cursor,
+          clientWidth,
+          clientHeight,
+          planes,
+        );
+        addMeasurePoint({
+          id: crypto.randomUUID(),
+          partId: snap.partId,
+          local: snap.local,
+          world: snap.world,
+          snap: snap.type,
+        });
       }}
     />
   );

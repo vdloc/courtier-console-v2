@@ -1,9 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { MeasureMode, MeasurePoint } from './types';
 
-/** Snapping only knows the procedural parts, so no exported-model member can yield a point yet. */
-export const MEASURE_UNAVAILABLE = 'Measure works in Engineering mode only for now.';
-
 export const MODE_POINTS: Record<MeasureMode, number> = {
   distance: 2,
   horizontal: 2,

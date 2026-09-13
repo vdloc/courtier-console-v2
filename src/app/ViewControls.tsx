@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button, Icon, Input, Slider } from '../ui/primitives';
 import type { CameraShot, Quality, SectionAxis, ViewMode } from '../store/types';
 import { useAppStore } from '../store/useAppStore';
-import { MEASURE_UNAVAILABLE } from '../store/measureSlice';
 import styles from './panels.module.css';
 import local from './ViewControls.module.css';
 
@@ -172,8 +171,6 @@ export function ViewControls() {
             type="button"
             className={styles.pick}
             data-active={measuring ? 'true' : undefined}
-            disabled={realistic}
-            aria-describedby={realistic ? 'measure-unavailable' : undefined}
             onClick={toggleMeasuring}
           >
             Measure
@@ -190,11 +187,6 @@ export function ViewControls() {
             Show all
           </button>
         </div>
-        {realistic && (
-          <p id="measure-unavailable" className={`${styles.body} ${styles.hint}`}>
-            {MEASURE_UNAVAILABLE}
-          </p>
-        )}
       </section>
 
       <section className={styles.section}>

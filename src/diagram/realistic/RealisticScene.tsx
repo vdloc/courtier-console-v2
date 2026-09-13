@@ -29,11 +29,10 @@ export function RealisticScene() {
   const playback = useAppStore((s) => s.playback);
   const lightRef = useRef<DirectionalLight>(null);
 
-  // Measurement can't snap to exported members yet, so an active one must not survive the switch.
+  // Points name members of one model only, so a mode switch either way drops them.
   useEffect(() => {
-    const state = useAppStore.getState();
-    if (state.measuring) state.toggleMeasuring();
-    if (state.measurePoints.length > 0) state.clearMeasurement();
+    useAppStore.getState().clearMeasurement();
+    return () => useAppStore.getState().clearMeasurement();
   }, []);
 
   const shadowTarget = useMemo(() => {
