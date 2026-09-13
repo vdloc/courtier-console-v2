@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Icon, Input, Slider } from '../ui/primitives';
 import type { CameraShot, Quality, SectionAxis, ViewMode } from '../store/types';
 import { useAppStore } from '../store/useAppStore';
+import { MEASURE_UNAVAILABLE } from '../store/measureSlice';
 import styles from './panels.module.css';
 import local from './ViewControls.module.css';
 
@@ -19,16 +20,11 @@ const MODES: { id: ViewMode; label: string; hint: string }[] = [
     hint: 'Full materials, shadows, depth of field',
   },
   { id: 'engineering', label: 'Engineering', hint: 'Flat colour by element type' },
-  { id: 'analysis', label: 'Analysis', hint: 'Shaded by load path' },
-  { id: 'construction', label: 'Construction', hint: 'Ghosted ahead of the sequence' },
 ];
 
 const AXES: SectionAxis[] = ['x', 'y', 'z'];
 
-/**
- * Realistic mode's fidelity tiers. The flat modes draw the same either way,
- * so the control only matters — and is only enabled — in realistic mode.
- */
+/** Realistic mode only: flat mode draws identically at every tier, so the control is hidden there. */
 const QUALITIES: { id: Quality; label: string }[] = [
   { id: 'high', label: 'High' },
   { id: 'balanced', label: 'Balanced' },
@@ -37,15 +33,17 @@ const QUALITIES: { id: Quality; label: string }[] = [
 
 export function ViewControls() {
   const shot = useAppStore((s) => s.shot);
-  const setShot = useAppStore((s) => s.setShot);
+  const requestShot = useAppStore((s) => s.requestShot);
+  const requestReset = useAppStore((s) => s.requestReset);
+  const requestFitModel = useAppStore((s) => s.requestFitModel);
+  const requestFocusSelected = useAppStore((s) => s.requestFocusSelected);
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
+  const realistic = mode === 'realistic';
   const quality = useAppStore((s) => s.quality);
   const setQuality = useAppStore((s) => s.setQuality);
   const exploded = useAppStore((s) => s.exploded);
   const toggleExplode = useAppStore((s) => s.toggleExplode);
-  const tour = useAppStore((s) => s.tour);
-  const toggleTour = useAppStore((s) => s.toggleTour);
   const showStats = useAppStore((s) => s.showStats);
   const toggleStats = useAppStore((s) => s.toggleStats);
   const measuring = useAppStore((s) => s.measuring);
@@ -64,7 +62,8 @@ export function ViewControls() {
   const toggleSectionFlip = useAppStore((s) => s.toggleSectionFlip);
 
   const viewpoints = useAppStore((s) => s.viewpoints);
-  const saveViewpoint = useAppStore((s) => s.saveViewpoint);
+  const requestSaveViewpoint = useAppStore((s) => s.requestSaveViewpoint);
+  const requestViewpoint = useAppStore((s) => s.requestViewpoint);
   const deleteViewpoint = useAppStore((s) => s.deleteViewpoint);
   const [vpName, setVpName] = useState('');
 
@@ -82,17 +81,22 @@ export function ViewControls() {
                 type="button"
                 className={styles.pick}
                 data-active={shot === s.id ? 'true' : undefined}
-                onClick={() => setShot(s.id)}
+                onClick={() => requestShot(s.id)}
               >
                 {s.label}
               </button>
             ))}
           </div>
           <div className={`${styles.buttonGrid} ${styles.cols2}`}>
-            <button type="button" className={styles.pick}>
+            <button type="button" className={styles.pick} onClick={requestFitModel}>
               Fit model
             </button>
-            <button type="button" className={styles.pick} disabled={!selected}>
+            <button
+              type="button"
+              className={styles.pick}
+              disabled={!selected}
+              onClick={requestFocusSelected}
+            >
               Focus selected
             </button>
             <button
@@ -106,20 +110,12 @@ export function ViewControls() {
             <button
               type="button"
               className={styles.pick}
-              data-active={tour ? 'true' : undefined}
-              onClick={toggleTour}
-            >
-              Tour
-            </button>
-            <button
-              type="button"
-              className={styles.pick}
               data-active={showStats ? 'true' : undefined}
               onClick={toggleStats}
             >
               Statistics
             </button>
-            <button type="button" className={styles.pick}>
+            <button type="button" className={styles.pick} onClick={requestReset}>
               Reset view
             </button>
           </div>
@@ -146,25 +142,26 @@ export function ViewControls() {
         </div>
       </section>
 
-      <section className={styles.section}>
-        <header className={styles.header}>
-          <span className={styles.title}>Quality</span>
-        </header>
-        <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
-          {QUALITIES.map((q) => (
-            <button
-              key={q.id}
-              type="button"
-              className={styles.pick}
-              data-active={quality === q.id ? 'true' : undefined}
-              disabled={mode !== 'realistic'}
-              onClick={() => setQuality(q.id)}
-            >
-              {q.label}
-            </button>
-          ))}
-        </div>
-      </section>
+      {realistic && (
+        <section className={styles.section}>
+          <header className={styles.header}>
+            <span className={styles.title}>Quality</span>
+          </header>
+          <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
+            {QUALITIES.map((q) => (
+              <button
+                key={q.id}
+                type="button"
+                className={styles.pick}
+                data-active={quality === q.id ? 'true' : undefined}
+                onClick={() => setQuality(q.id)}
+              >
+                {q.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className={styles.section}>
         <header className={styles.header}>
@@ -175,6 +172,8 @@ export function ViewControls() {
             type="button"
             className={styles.pick}
             data-active={measuring ? 'true' : undefined}
+            disabled={realistic}
+            aria-describedby={realistic ? 'measure-unavailable' : undefined}
             onClick={toggleMeasuring}
           >
             Measure
@@ -191,6 +190,11 @@ export function ViewControls() {
             Show all
           </button>
         </div>
+        {realistic && (
+          <p id="measure-unavailable" className={`${styles.body} ${styles.hint}`}>
+            {MEASURE_UNAVAILABLE}
+          </p>
+        )}
       </section>
 
       <section className={styles.section}>
@@ -209,7 +213,7 @@ export function ViewControls() {
               size="sm"
               disabled={!vpName.trim()}
               onClick={() => {
-                saveViewpoint(vpName.trim());
+                requestSaveViewpoint(vpName.trim());
                 setVpName('');
               }}
             >
@@ -218,8 +222,14 @@ export function ViewControls() {
           </div>
           {viewpoints.map((v) => (
             <div key={v.id} className={local.viewpoint}>
-              <span className={local.vpName}>{v.name}</span>
-              <span className={local.vpMeta}>{v.saved}</span>
+              <button
+                type="button"
+                className={local.vpRestore}
+                onClick={() => requestViewpoint(v.id)}
+              >
+                <span className={local.vpName}>{v.name}</span>
+                <span className={local.vpMeta}>{v.saved}</span>
+              </button>
               <button
                 type="button"
                 className={local.vpDelete}

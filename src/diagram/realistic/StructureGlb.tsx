@@ -23,22 +23,9 @@ import { useSectionPlanes } from '../useSectionPlanes';
 import { useAppStore } from '../../store/useAppStore';
 import { LAYERS, type ComponentInfo, type LayerName } from '../../store/types';
 
-/**
- * The real structure: the demo viewer's Draco-compressed GLB, ~3360 members
- * carrying the metadata this app's `ComponentData` contract was written
- * against.
- *
- * Mounted only in realistic mode. The flat modes keep the procedural boxes in
- * diagram/model.ts — they are a drawing, and a drawing wants a drawing's
- * geometry.
- */
-
 useGLTF.preload(MODEL_URL, DRACO_PATH);
 
-/**
- * The GLB's own metadata, as Blender wrote it. Every field is a string in the
- * file — `dimensions` and `connected_objects` are parsed below.
- */
+/** The GLB's Blender metadata; every field is a string in the file. */
 interface GlbExtras {
   discipline?: string;
   element_type?: string;
@@ -53,20 +40,13 @@ interface GlbExtras {
   connected_objects?: string;
 }
 
-/** One member, with what the per-frame passes need to know about it. */
 interface MemberRecord {
   mesh: Mesh;
-  /**
-   * Where the clip puts the member at the current time, before any explode
-   * offset. Re-captured after every seek, because the clip owns the transform
-   * and an offset measured against a stale pose collapses the explode.
-   */
+  /** Pose the clip gives at the current time, before explode; re-read after every seek. */
   home: Vector3;
-  /** LOD_DISTANCE for its element type, or undefined if it is never culled. */
   lod: number | undefined;
 }
 
-/** Texture slots that are sampled at grazing angles and so want anisotropy. */
 const FILTERED_SLOTS = [
   'map',
   'normalMap',
@@ -81,13 +61,12 @@ const EXPLODE_CENTRE = new Vector3(
   (MODEL_BOUNDS.min[2] + MODEL_BOUNDS.max[2]) / 2,
 );
 
-/** Seconds between culling passes. 3000 distances a frame would cost more than the draw calls saved. */
+/** Seconds between culling passes; per-frame distance checks would cost more than they save. */
 const CULL_INTERVAL = 0.16;
 
-/** Reused by every culling pass rather than allocated inside the frame loop. */
 const scratchCentre = new Vector3();
 
-/** "0.033 x 18.500 x 0.033" → 18.5, the longest bounding-box dimension. */
+/** "0.033 x 18.500 x 0.033" → 18.5 */
 function longestDimension(dimensions: string | undefined): number {
   if (!dimensions) return 0;
   const parts = dimensions.split('x').map((n) => Number.parseFloat(n.trim()));
@@ -111,7 +90,6 @@ function componentFrom(object: Object3D, layer: LayerName): ComponentInfo | null
     section: extras.section ?? '',
     material_spec: extras.material_spec ?? '',
     length: longestDimension(extras.dimensions),
-    // No mass: see the field's note in store/types.ts.
     status: 'Installed',
     layer,
     connected: (extras.connected_objects ?? '')
@@ -121,7 +99,6 @@ function componentFrom(object: Object3D, layer: LayerName): ComponentInfo | null
   };
 }
 
-/** Walk up to the layer group the object belongs to. */
 export function layerOf(object: Object3D): LayerName | null {
   let node: Object3D | null = object;
   while (node) {
@@ -133,6 +110,7 @@ export function layerOf(object: Object3D): LayerName | null {
   return null;
 }
 
+/** The exported structure, mounted in realistic mode only. */
 export function StructureGlb() {
   const { scene, animations } = useGLTF(MODEL_URL, DRACO_PATH);
   const gl = useThree((state) => state.gl);
@@ -155,7 +133,6 @@ export function StructureGlb() {
     [animations],
   );
 
-  // --- one-time preparation ---------------------------------------------
   useEffect(() => {
     const components: Record<string, ComponentInfo> = {};
     const records: MemberRecord[] = [];
@@ -165,9 +142,6 @@ export function StructureGlb() {
       if (!(object instanceof Mesh)) return;
       object.castShadow = true;
       object.receiveShadow = true;
-      // Safe only because every member is its own node with its own bounds,
-      // which is exactly what the export preserved. It is the single biggest
-      // win on a scene this size.
       object.frustumCulled = true;
 
       const type = (object.userData as GlbExtras).element_type;
@@ -190,8 +164,7 @@ export function StructureGlb() {
     recordsRef.current = records;
     materialsRef.current = [...materials];
 
-    // The materials and textures belong to useGLTF's cache, so everything
-    // below is written to be idempotent: a remount re-applies the same values.
+    // Materials and textures belong to useGLTF's cache, so these writes must stay idempotent.
     const anisotropy = gl.capabilities.getMaxAnisotropy();
     const textures = new Set<Texture>();
     for (const material of materials) {
@@ -205,35 +178,16 @@ export function StructureGlb() {
         if (texture) textures.add(texture);
       }
     }
-    // three defaults anisotropy to 1, which blurs a map repeated 5–28 times
-    // along a beam down to its compressed axis at any grazing view — and every
-    // flange face in a structure is seen at a grazing angle from somewhere.
     for (const texture of textures) {
       if (texture.anisotropy === anisotropy) continue;
       texture.anisotropy = anisotropy;
       texture.needsUpdate = true;
     }
 
-    // Registered here rather than in the panel because this is where the
-    // scene is known to be loaded and its metadata readable; the panels stay
-    // pure consumers with no R3F context of their own.
     registerComponents(components);
 
     if (animations.length > 0) {
-      // THE GLB SHIPS PARKED, NOT BUILT.
-      //
-      // The exporter samples the scene animation and writes every node from
-      // the first frame, so on disk the frame sits scaled to 0.001 and below
-      // ground. Setting the Blender scene to the last frame before export does
-      // not survive that sampling. Seeking the clip to its end here is what
-      // applies the finished transform to every node — without it the
-      // viewport is empty and the model looks like it failed to load.
-      // Deliberately NOT `action.paused = true`. A paused action has an
-      // effective timeScale of zero, and `mixer.setTime` works by resetting
-      // every action to t=0 and then advancing by the delta — so with the
-      // actions paused the advance is discarded and every seek lands on frame
-      // zero, which is the parked pose. The symptom is a model that loads
-      // without error and renders at 1/1000 scale.
+      // The GLB is exported at frame 0 (scaled 0.001), so seek to the clip's end to show it built.
       const mixer = new AnimationMixer(scene);
       mixerRef.current = mixer;
       actionsRef.current = animations.map((clip) => {
@@ -246,49 +200,29 @@ export function StructureGlb() {
       seek(duration);
     }
 
-    // The shadow map is only redrawn on demand (see RealisticScene), and the
-    // first one may have been drawn before this model finished loading.
     gl.shadowMap.needsUpdate = true;
 
     return () => {
-      // The scene is cached and shared with the next mount: hand it back
-      // un-exploded and fully visible, with no section cut on its materials.
+      // The cached scene is reused on the next mount: hand it back un-exploded, visible, uncut.
       for (const record of records) {
         record.mesh.position.copy(record.home);
         record.mesh.visible = true;
       }
       for (const material of materials) material.clippingPlanes = [];
+      // No uncacheRoot: it took 1310 ms on this model, and the mixer is garbage once dropped.
       mixerRef.current?.stopAllAction();
-      // No `uncacheRoot`. It unbinds one property at a time with a linear
-      // search each, and with a track per animated property on ~3360 nodes
-      // that measured 1310 ms — a frozen UI on every switch out of realistic
-      // mode. This mixer is discarded on the next line and nothing else
-      // references its caches, so the garbage collector frees the lot.
       mixerRef.current = null;
       actionsRef.current = [];
       recordsRef.current = [];
       materialsRef.current = [];
     };
-    // `seek` reads refs only; listing it would re-run the whole preparation
-    // on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, animations, duration, registerComponents, gl]);
-
-  // --- construction timeline + explode ------------------------------------
-  //
-  // Both write `mesh.position`, and the clip owns it, so they go through one
-  // sequence: strip the offset, let the clip pose the frame, re-read that pose
-  // as home, put the offset back. Applying the explode on top of a pose the
-  // clip then overwrites, or seeking while offsets are still applied to nodes
-  // the clip does not animate, is how an exploded view drifts apart a little
-  // further on every scrub.
 
   function applyExplode() {
     const store = useAppStore.getState();
     const factor = store.exploded ? store.explodeFactor : 0;
     for (const { mesh, home } of recordsRef.current) {
-      // Pushed away from the model centre, lifting with height — the same
-      // rule the flat modes use, so both models explode the same way.
       mesh.position.set(
         home.x + (home.x - EXPLODE_CENTRE.x) * factor,
         home.y + (home.y - EXPLODE_CENTRE.y) * factor * 1.6,
@@ -297,17 +231,13 @@ export function StructureGlb() {
     }
   }
 
+  // Strip explode, let the clip pose, re-read home, re-apply explode — or scrubbing drifts the explode.
   function seek(time: number) {
     const mixer = mixerRef.current;
     if (!mixer) return;
     const records = recordsRef.current;
     for (const { mesh, home } of records) mesh.position.copy(home);
-    // Un-pause before every seek, not just the first. `clampWhenFinished`
-    // holds the last frame by setting `paused = true` the moment a LoopOnce
-    // action reaches its end — which the load-time seek to `duration` always
-    // does. From then on every `setTime` resets the action to t=0 and
-    // discards the advance, so scrubbing the timeline parks the whole model
-    // at 1/1000 scale and records that parked pose as the explode's home.
+    // clampWhenFinished pauses the action at its end, and a paused action ignores setTime.
     for (const action of actionsRef.current) {
       action.paused = false;
       action.enabled = true;
@@ -324,30 +254,19 @@ export function StructureGlb() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exploded, explodeFactor, gl]);
 
-  // The store's `progress` is the same 0..1 the flat modes drive their
-  // per-part build order with, so the timeline scrubber works in both without
-  // the panel knowing which model is mounted.
   const progress = useAppStore((s) => s.progress);
 
-  // --- visibility: ONE writer for mesh.visible -----------------------------
-  //
-  // The hidden set and distance culling both decide whether a member is
-  // drawn, so they are one predicate evaluated in one place. Two writers
-  // cannot coexist: a hide-set effect turns every culled bolt back on at each
-  // tree click, and a culling pass on its own turns every hidden bolt back on
-  // 0.16 s after the user hid it. Layers are applied to the layer GROUPS, a
-  // different object, so they compose with this rather than competing.
+  // The only writer of mesh.visible: hide set and distance culling as one predicate, or each undoes the other.
   function refreshVisibility(): boolean {
     const { hidden, quality } = useAppStore.getState();
     const scale = LOD_SCALE[quality];
     const eye = camera.position;
-    const centre = scratchCentre;
     let changed = false;
     for (const { mesh, lod } of recordsRef.current) {
       let visible = !hidden.has(mesh.name);
       if (visible && lod !== undefined) {
-        centre.setFromMatrixPosition(mesh.matrixWorld);
-        visible = eye.distanceTo(centre) < lod * scale;
+        scratchCentre.setFromMatrixPosition(mesh.matrixWorld);
+        visible = eye.distanceTo(scratchCentre) < lod * scale;
       }
       if (mesh.visible !== visible) {
         mesh.visible = visible;
@@ -359,9 +278,6 @@ export function StructureGlb() {
 
   useEffect(
     () =>
-      // Subscribed rather than selected: `hidden` is a fresh Set on every
-      // toggle, and re-rendering this component on each tree click would buy
-      // nothing the listener does not already do.
       useAppStore.subscribe((state, previous) => {
         if (state.hidden === previous.hidden && state.quality === previous.quality) {
           return;
@@ -383,13 +299,10 @@ export function StructureGlb() {
     cullClock.current += delta;
     if (cullClock.current < CULL_INTERVAL) return;
     cullClock.current = 0;
-    // A part crossing its threshold changes what casts, so the cached shadow
-    // map is redrawn once — at most six times a second while zooming, against
-    // every frame before.
     if (refreshVisibility()) gl.shadowMap.needsUpdate = true;
   });
 
-  // --- layer visibility ---------------------------------------------------
+  // Layers toggle the layer groups, a different object from the meshes refreshVisibility writes.
   useEffect(() => {
     scene.traverse((object) => {
       if ((LAYERS as readonly string[]).includes(object.name)) {
@@ -399,12 +312,6 @@ export function StructureGlb() {
     gl.shadowMap.needsUpdate = true;
   }, [scene, layers, gl]);
 
-  // --- section plane ------------------------------------------------------
-  //
-  // On the seven shared materials rather than the renderer, for the same
-  // reason the flat modes clip per material. `clipShadows` so the sun stops
-  // casting what the cut has removed — otherwise a sectioned bay still throws
-  // the shadow of the half that is gone.
   useEffect(() => {
     for (const material of materialsRef.current) {
       material.clippingPlanes = planes;

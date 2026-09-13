@@ -3,6 +3,12 @@
   border-bottom: 1px solid var(--border-soft);
 }
 
+/* panels.empty defaults to --text-faint, which measures under WCAG AA for
+   this text size — dim instead, not faint. */
+.filterEmpty {
+  color: var(--text-dim);
+}
+
 .row {
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) auto 20px 20px;

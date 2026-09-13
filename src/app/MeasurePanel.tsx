@@ -1,6 +1,7 @@
 import { Callout } from '../ui/primitives';
 import type { MeasureMode } from '../store/types';
-import { MODE_HINTS, MODE_POINTS } from '../store/measureSlice';
+import { MEASURE_UNAVAILABLE, MODE_HINTS, MODE_POINTS } from '../store/measureSlice';
+import { evaluate, resolveMeasurePoint } from '../diagram/measurement';
 import { useAppStore } from '../store/useAppStore';
 import panels from './panels.module.css';
 import styles from './MeasurePanel.module.css';
@@ -13,14 +14,6 @@ const MODES: { id: MeasureMode; label: string }[] = [
   { id: 'area', label: 'Area' },
 ];
 
-/** Placeholder for the geometry the viewer will supply at the next milestone. */
-function readout(mode: MeasureMode, points: number): string | null {
-  if (points < MODE_POINTS[mode]) return null;
-  if (mode === 'angle') return '90.0°';
-  if (mode === 'area') return '8.640 m²';
-  return '7.200 m';
-}
-
 export function MeasurePanel() {
   const measuring = useAppStore((s) => s.measuring);
   const toggleMeasuring = useAppStore((s) => s.toggleMeasuring);
@@ -29,8 +22,12 @@ export function MeasurePanel() {
   const points = useAppStore((s) => s.measurePoints);
   const undo = useAppStore((s) => s.undoMeasurePoint);
   const clear = useAppStore((s) => s.clearMeasurement);
+  const realistic = useAppStore((s) => s.mode === 'realistic');
+  const exploded = useAppStore((s) => s.exploded);
+  const explodeFactor = useAppStore((s) => s.explodeFactor);
 
-  const value = readout(mode, points.length);
+  const resolved = points.map((p) => resolveMeasurePoint(p, exploded, explodeFactor));
+  const result = evaluate(mode, resolved);
   const needed = MODE_POINTS[mode];
 
   return (
@@ -61,10 +58,17 @@ export function MeasurePanel() {
           type="button"
           className={panels.pick}
           data-active={measuring ? 'true' : undefined}
+          disabled={realistic}
+          aria-describedby={realistic ? 'measure-panel-unavailable' : undefined}
           onClick={toggleMeasuring}
         >
           {measuring ? 'Measuring — click to stop' : 'Start measuring'}
         </button>
+        {realistic && (
+          <p id="measure-panel-unavailable" className={panels.hint}>
+            {MEASURE_UNAVAILABLE}
+          </p>
+        )}
 
         <div className={`${panels.buttonGrid} ${panels.cols3}`}>
           {MODES.map((m) => (
@@ -82,10 +86,10 @@ export function MeasurePanel() {
 
         <p className={panels.hint}>{MODE_HINTS[mode]}</p>
 
-        {value && (
+        {result && (
           <div className={styles.readout}>
-            <span className={styles.readoutLabel}>{mode}</span>
-            <span className={styles.readoutValue}>{value}</span>
+            <span className={styles.readoutLabel}>{result.label}</span>
+            <span className={styles.readoutValue}>{result.text}</span>
           </div>
         )}
 
@@ -94,9 +98,12 @@ export function MeasurePanel() {
             <span className={styles.tag}>{i + 1}</span>
             <span>
               <span className={styles.snap}>{p.snap}</span>
-              <span className={styles.object}>{p.object}</span>
+              <span className={styles.object}>{p.partId}</span>
               <span className={styles.xyz}>
-                {p.xyz.map((n) => n.toFixed(3)).join(', ')}
+                {resolved[i]
+                  .toArray()
+                  .map((n) => n.toFixed(3))
+                  .join(', ')}
               </span>
             </span>
           </div>

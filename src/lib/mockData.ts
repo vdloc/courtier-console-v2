@@ -4,9 +4,9 @@
  * tree from one spec so the viewport and the explorer cannot disagree.
  */
 
-import type { LayerName, MeasurePoint, TimelinePhase, Viewpoint } from '../store/types';
+import type { LayerName, TimelinePhase, Viewpoint } from '../store/types';
 import { LAYERS } from '../store/types';
-import { BAY_X, COMPONENTS, buildTree } from '../diagram/model';
+import { COMPONENTS, buildTree } from '../diagram/model';
 
 export const PROJECT_NAME = 'Northgate Plant Extension';
 export const PROJECT_META = 'STEEL FRAME · 4 × 3 BAYS · G+3';
@@ -29,14 +29,23 @@ export const PHASES: TimelinePhase[] = [
 
 export const DURATION = 18;
 
-export const MOCK_MEASURE_POINTS: MeasurePoint[] = [
-  { id: 'p1', snap: 'vertex', object: 'Steel_Column_L00_A1', xyz: [0, 0, 0] },
-  { id: 'p2', snap: 'centre', object: 'Steel_Column_L00_B1', xyz: [BAY_X, 0, 0] },
-];
-
 export const MOCK_VIEWPOINTS: Viewpoint[] = [
-  { id: 'v1', name: 'Base connection A1', mode: 'engineering', saved: '2 days ago' },
-  { id: 'v2', name: 'Services clash — L01', mode: 'analysis', saved: 'yesterday' },
+  {
+    id: 'v1',
+    name: 'Base connection A1',
+    mode: 'engineering',
+    position: [4, 3.5, 4],
+    target: [0, 1, 0],
+    saved: '2 days ago',
+  },
+  {
+    id: 'v2',
+    name: 'Services clash — L01',
+    mode: 'engineering',
+    position: [10, 6, 12],
+    target: [14.4, 3.5, 3.6],
+    saved: 'yesterday',
+  },
 ];
 
 export const ELEMENT_LABELS: Record<string, string> = {

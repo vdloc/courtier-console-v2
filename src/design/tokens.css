@@ -27,7 +27,9 @@
   --border-soft: #e8eaed;
   --text: #202124;
   --text-dim: #5f6368;
-  --text-faint: #80868b;
+  /* DERIVED, not eyeballed against the reference — but AA-checked (4.5:1+)
+     against every surface it sits on, primary-wash being the tightest. */
+  --text-faint: #676c71;
   --text-on-dark: #ffffff;
   --text-on-dark-dim: #b6c6da;
 
@@ -48,19 +50,12 @@
   --dia-ink: #252b2e;
   --dia-rebar: #da5515;
 
-  /* --- realistic mode lighting, MEASURED OFF env/site_2k.hdr -------------
-     Not design choices. The key is the HDRI's own sun disc, warmed; the fill
-     is its sky; the fog is its horizon band scaled by backgroundIntensity.
-     Re-derive from the file if the HDRI is swapped — see diagram/realistic/
-     rig.ts for the method. */
+  /* --- realistic mode lighting: measured off env/site_2k.hdr (sun, sky, horizon) */
   --lit-key: #fff1dc;
   --lit-fill: #c3d6ea;
   --lit-fog: #a6acbd;
-  /* Contact shadow tint. Warm, never black: a shadow is the part of a surface
-     lit only by the bounce, and a black one reads as a hole in the ground. */
+  /* Contact shadow and AO tints: warm bounce, never black. */
   --lit-contact: #2e2419;
-  /* Ambient occlusion tint, for the same reason: occlusion is the part of a
-     surface reached only by bounced light, and outdoors that bounce is warm. */
   --lit-occlusion: #241b12;
 
   /* --- type ------------------------------------------------------------- */

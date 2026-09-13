@@ -77,8 +77,7 @@ export function PropertyPanel() {
             <Group title="Geometry">
               <Field label="Section">{selected.section}</Field>
               <Field label="Length">{selected.length.toFixed(3)} m</Field>
-              {/* An em dash, not a zero: the GLB carries no mass, and
-                  "0.0 kg" is a wrong answer where "not known" is right. */}
+              {/* Dash, not 0.0 kg: the GLB has no mass. */}
               <Field label="Mass">
                 {selected.mass === undefined ? '—' : `${selected.mass.toFixed(1)} kg`}
               </Field>

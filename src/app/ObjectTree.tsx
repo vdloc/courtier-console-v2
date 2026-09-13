@@ -104,67 +104,79 @@ export function ObjectTree() {
       </div>
 
       <div className={panels.scroll} ref={scroller}>
-        {rows.map(({ node, depth, hasChildren }) => {
-          const isHidden = hidden.has(node.id);
-          const isLocked = locked.has(node.id);
-          return (
-            <div
-              key={node.id}
-              className={styles.row}
-              data-selected={selected?.id === node.id ? 'true' : undefined}
-              data-hidden={isHidden ? 'true' : undefined}
-              style={{ paddingLeft: 4 + depth * 12 }}
-              onClick={() => (hasChildren ? toggleCollapsed(node.id) : select(node.id))}
-              role="treeitem"
-              aria-selected={selected?.id === node.id}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  if (hasChildren) toggleCollapsed(node.id);
-                  else select(node.id);
+        {filter && rows.length === 0 ? (
+          <div className={`${panels.empty} ${styles.filterEmpty}`}>
+            No matches for “{filter}”.
+            <br />
+            <button type="button" className={panels.link} onClick={() => setFilter('')}>
+              Clear filter
+            </button>
+          </div>
+        ) : (
+          rows.map(({ node, depth, hasChildren }) => {
+            const isHidden = hidden.has(node.id);
+            const isLocked = locked.has(node.id);
+            return (
+              <div
+                key={node.id}
+                className={styles.row}
+                data-selected={selected?.id === node.id ? 'true' : undefined}
+                data-hidden={isHidden ? 'true' : undefined}
+                style={{ paddingLeft: 4 + depth * 12 }}
+                onClick={() =>
+                  hasChildren ? toggleCollapsed(node.id) : select(node.id)
                 }
-              }}
-            >
-              <span className={styles.caret}>
-                {hasChildren && (
-                  <Icon
-                    name={collapsed.has(node.id) ? 'chevron-right' : 'chevron-down'}
-                    size={12}
-                  />
-                )}
-              </span>
-              <span
-                className={`${styles.label} ${
-                  node.kind === 'level'
-                    ? styles.level
-                    : node.kind === 'system'
-                      ? styles.system
-                      : ''
-                }`}
-              >
-                {node.label}
-              </span>
-              <span className={styles.detail}>{node.detail}</span>
-              <span
-                className={`${styles.dot} ${node.status ? STATUS_CLASS[node.status] : ''}`}
-              />
-              <button
-                type="button"
-                className={styles.iconToggle}
-                data-on={isHidden || isLocked ? 'true' : undefined}
-                aria-label={isHidden ? 'Show' : 'Hide'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setHidden(node.id, !isHidden);
-                  if (isLocked) setLocked(node.id, false);
+                role="treeitem"
+                aria-selected={selected?.id === node.id}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (hasChildren) toggleCollapsed(node.id);
+                    else select(node.id);
+                  }
                 }}
               >
-                <Icon name="eye" size={13} />
-              </button>
-            </div>
-          );
-        })}
+                <span className={styles.caret}>
+                  {hasChildren && (
+                    <Icon
+                      name={collapsed.has(node.id) ? 'chevron-right' : 'chevron-down'}
+                      size={12}
+                    />
+                  )}
+                </span>
+                <span
+                  className={`${styles.label} ${
+                    node.kind === 'level'
+                      ? styles.level
+                      : node.kind === 'system'
+                        ? styles.system
+                        : ''
+                  }`}
+                >
+                  {node.label}
+                </span>
+                <span className={styles.detail}>{node.detail}</span>
+                <span
+                  className={`${styles.dot} ${node.status ? STATUS_CLASS[node.status] : ''}`}
+                />
+                <button
+                  type="button"
+                  className={styles.iconToggle}
+                  data-on={isHidden || isLocked ? 'true' : undefined}
+                  aria-label={isHidden ? 'Show' : 'Hide'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setHidden(node.id, !isHidden);
+                    if (isLocked) setLocked(node.id, false);
+                  }}
+                >
+                  <Icon name="eye" size={13} />
+                </button>
+              </div>
+            );
+          })
+        )}
       </div>
     </section>
   );

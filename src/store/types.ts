@@ -15,8 +15,10 @@ export const LAYERS = [
 export type LayerName = (typeof LAYERS)[number];
 
 export type Discipline = 'STR' | 'ARC' | 'MEP' | 'TMP';
-export type ViewMode = 'realistic' | 'engineering' | 'analysis' | 'construction';
+export type ViewMode = 'realistic' | 'engineering';
 export type CameraShot = 'front' | 'side' | 'iso' | 'joint';
+export type CameraRequestKind = 'shot' | 'reset' | 'fit' | 'focus' | 'viewpoint';
+/** Realistic-mode fidelity tier; flat mode ignores it. */
 export type Quality = 'high' | 'balanced' | 'performance';
 export type SectionAxis = 'x' | 'y' | 'z';
 export type MeasureMode = 'distance' | 'horizontal' | 'vertical' | 'angle' | 'area';
@@ -42,13 +44,7 @@ export interface ComponentInfo extends ComponentData {
   name: string;
   /** Longest bounding-box dimension, metres. */
   length: number;
-  /**
-   * Absent for members loaded from the GLB: the export carries dimensions but
-   * no mass, and the demo viewer's answer is an ESTIMATE with a stated basis
-   * (`estimateMass`, engineering/PropertyPanel.tsx) rather than a number the
-   * file actually knows. Until that is ported, realistic mode shows no mass
-   * rather than a fabricated one.
-   */
+  /** Absent for exported-model members: the GLB carries no mass. */
   mass?: number;
   status: Status;
   layer: LayerName;
@@ -66,9 +62,12 @@ export interface TreeNode {
 
 export interface MeasurePoint {
   id: string;
-  snap: 'vertex' | 'edge' | 'face' | 'centre';
-  object: string;
-  xyz: [number, number, number];
+  partId: string;
+  /** Local to the part — rides explode and any future transform. */
+  local: [number, number, number];
+  /** World position at capture; fallback only, for a part the timeline has unmounted. */
+  world: [number, number, number];
+  snap: 'vertex' | 'midpoint' | 'edge' | 'face';
 }
 
 export interface TimelinePhase {
@@ -81,5 +80,7 @@ export interface Viewpoint {
   id: string;
   name: string;
   mode: ViewMode;
+  position: [number, number, number];
+  target: [number, number, number];
   saved: string;
 }

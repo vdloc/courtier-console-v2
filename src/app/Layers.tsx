@@ -20,7 +20,7 @@ export function Layers() {
           className={styles.link}
           onClick={() => setAllLayers(!allOn)}
         >
-          {allOn ? 'Hide all' : 'Show all'}
+          {allOn ? 'Hide layers' : 'Show layers'}
         </button>
       </header>
       <div className={styles.body}>
