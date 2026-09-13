@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { TopBar } from './TopBar';
 import { ObjectTree } from './ObjectTree';
 import { Layers } from './Layers';
@@ -20,18 +20,30 @@ const NARROW = '(max-width: 1280px)';
 export default function App() {
   const selected = useAppStore((s) => s.selected);
   const select = useAppStore((s) => s.select);
-  const drawerOpen = Boolean(selected);
+  const measuring = useAppStore((s) => s.measuring);
+  const toggleMeasuring = useAppStore((s) => s.toggleMeasuring);
+  const drawerOpen = Boolean(selected) || measuring;
+
+  // Picking a measurement point IS clicking the canvas — a modal scrim would
+  // eat every pick. Only block the canvas when the drawer is showing
+  // properties alone; measuring always keeps it click-through beside itself.
+  const showScrim = drawerOpen && !measuring;
+
+  const closeDrawer = useCallback(() => {
+    select(null);
+    if (measuring) toggleMeasuring();
+  }, [select, measuring, toggleMeasuring]);
 
   // Below 1280px .right is an overlay, not a column — Escape should only
   // close it there, not change desktop selection behaviour.
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && window.matchMedia(NARROW).matches) select(null);
+      if (e.key === 'Escape' && window.matchMedia(NARROW).matches) closeDrawer();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [drawerOpen, select]);
+  }, [drawerOpen, closeDrawer]);
 
   if (GALLERY) return <Gallery />;
 
@@ -53,20 +65,20 @@ export default function App() {
         <Viewport />
       </div>
 
-      {drawerOpen && (
+      {showScrim && (
         <button
           type="button"
           className={styles.scrim}
-          aria-label="Close properties"
-          onClick={() => select(null)}
+          aria-label="Close panel"
+          onClick={closeDrawer}
         />
       )}
       <div className={styles.right} data-open={drawerOpen ? 'true' : undefined}>
         <IconButton
           icon="close"
-          label="Close properties"
+          label="Close panel"
           className={styles.closeDrawer}
-          onClick={() => select(null)}
+          onClick={closeDrawer}
         />
         <MeasurePanel />
         <PropertyPanel />
