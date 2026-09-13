@@ -8,8 +8,9 @@
 import { Vector3 } from 'three';
 import type { MeasureMode, MeasurePoint } from '../store/types';
 import { MODE_POINTS } from '../store/measureSlice';
-import { PARTS_BY_ID, explodedPosition } from './model';
-import { glbLocalToWorld, glbMember } from './realistic/glbMembers';
+import { explodedPosition } from './model';
+import { glbLocalToWorld } from './realistic/glbMembers';
+import { memberByName } from './snapping';
 
 export interface MeasurementValue {
   value: number;
@@ -32,10 +33,12 @@ export function resolveMeasurePoint(
   exploded: boolean,
   explodeFactor: number,
 ): Vector3 | null {
-  const member = glbMember(point.partId);
-  if (member) return glbLocalToWorld(member, point.local, exploded ? explodeFactor : 0);
-  const part = PARTS_BY_ID[point.partId];
-  if (!part) return null;
+  const ref = memberByName(point.partId);
+  if (!ref) return null;
+  if (ref.model === 'glb') {
+    return glbLocalToWorld(ref.member, point.local, exploded ? explodeFactor : 0);
+  }
+  const { part } = ref;
   const base = exploded ? explodedPosition(part, explodeFactor) : part.position;
   return new Vector3(
     base[0] + point.local[0],

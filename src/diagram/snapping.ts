@@ -18,10 +18,10 @@
  * and picking by screen distance alone silently snaps to the hidden one.
  */
 
-import { Box3, Mesh, Vector2, Vector3 } from 'three';
+import { Box3, Vector2, Vector3 } from 'three';
 import type { Camera, Intersection, Object3D, Plane } from 'three';
-import { PARTS_BY_ID } from './model';
-import { glbMember } from './realistic/glbMembers';
+import { PARTS_BY_ID, type Part } from './model';
+import { glbMember, type GlbMember } from './realistic/glbMembers';
 
 export type SnapType = 'vertex' | 'midpoint' | 'edge' | 'face';
 
@@ -53,16 +53,31 @@ function boxCorners({ min: a, max: b }: Box3): Vector3[] {
   ];
 }
 
-/** The member's own box in local space: procedural size, or the exported mesh's geometry bounds. */
+export type MemberRef =
+  { model: 'glb'; member: GlbMember } | { model: 'procedural'; part: Part };
+
+/**
+ * The one rule for which model a name belongs to. Pads share names across both models,
+ * so while the GLB is mounted its member wins; the registry is empty otherwise.
+ */
+export function memberByName(name: string): MemberRef | null {
+  const member = glbMember(name);
+  if (member) return { model: 'glb', member };
+  const part = PARTS_BY_ID[name];
+  return part ? { model: 'procedural', part } : null;
+}
+
+/** The member's own box in local space: the exported mesh's geometry bounds, or procedural size. */
 function localBox(object: Object3D): Box3 | null {
-  const part = PARTS_BY_ID[object.name];
-  if (part) {
-    const half = new Vector3(...part.size).multiplyScalar(0.5);
+  const ref = memberByName(object.name);
+  if (!ref) return null;
+  if (ref.model === 'procedural') {
+    const half = new Vector3(...ref.part.size).multiplyScalar(0.5);
     return new Box3(half.clone().negate(), half);
   }
-  if (!(object instanceof Mesh) || !glbMember(object.name)) return null;
-  if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
-  return object.geometry.boundingBox;
+  const { geometry } = ref.member.mesh;
+  if (!geometry.boundingBox) geometry.computeBoundingBox();
+  return geometry.boundingBox;
 }
 
 /** Drawn only if it and every ancestor are visible; layer toggles hide the group, not the mesh. */
@@ -130,7 +145,7 @@ export function firstUnclippedHit(
   planes: Plane[],
 ): Intersection | null {
   for (const hit of intersections) {
-    if (!PARTS_BY_ID[hit.object.name] && !glbMember(hit.object.name)) continue;
+    if (!memberByName(hit.object.name)) continue;
     if (isRendered(hit.object) && passesClip(hit.point, planes)) return hit;
   }
   return null;
