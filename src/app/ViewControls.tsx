@@ -17,7 +17,7 @@ const MODES: { id: ViewMode; label: string; hint: string }[] = [
   {
     id: 'realistic',
     label: 'Realistic',
-    hint: 'Full materials, shadows, depth of field',
+    hint: 'PBR materials, HDRI lighting, soft shadows',
   },
   { id: 'engineering', label: 'Engineering', hint: 'Flat colour by element type' },
 ];
