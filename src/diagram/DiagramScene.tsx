@@ -74,6 +74,9 @@ function CameraRig() {
   const cameraRequestKind = useAppStore((s) => s.cameraRequestKind);
   const cameraRequestNonce = useAppStore((s) => s.cameraRequestNonce);
   const selected = useAppStore((s) => s.selected);
+  const viewpointToRestore = useAppStore((s) => s.viewpointToRestore);
+  const viewpoints = useAppStore((s) => s.viewpoints);
+  const setMode = useAppStore((s) => s.setMode);
 
   useEffect(() => {
     const camera = camRef.current;
@@ -87,6 +90,12 @@ function CameraRig() {
       // Shots set direction deliberately — no attempt to preserve the current angle.
       endPos = new Vector3(...SHOT_POSITION[shot]);
       endTarget = new Vector3(...CENTRE);
+    } else if (cameraRequestKind === 'viewpoint') {
+      const vp = viewpoints.find((v) => v.id === viewpointToRestore);
+      if (!vp) return;
+      endPos = new Vector3(...vp.position);
+      endTarget = new Vector3(...vp.target);
+      setMode(vp.mode);
     } else {
       const box =
         cameraRequestKind === 'fit'
@@ -167,6 +176,26 @@ function CameraRig() {
     if (elapsed >= TOTAL_MS) anim.current = null;
   });
 
+  const pendingViewpointName = useAppStore((s) => s.pendingViewpointName);
+  const viewpointSaveNonce = useAppStore((s) => s.viewpointSaveNonce);
+  const commitViewpoint = useAppStore((s) => s.commitViewpoint);
+  const mode = useAppStore((s) => s.mode);
+
+  useEffect(() => {
+    const camera = camRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls || !pendingViewpointName) return;
+    commitViewpoint({
+      id: crypto.randomUUID(),
+      name: pendingViewpointName,
+      mode,
+      position: camera.position.toArray() as [number, number, number],
+      target: controls.target.toArray() as [number, number, number],
+      saved: 'just now',
+    });
+    // Only the nonce should retrigger this — read current mode, not watch it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewpointSaveNonce]);
 
   return (
     <>

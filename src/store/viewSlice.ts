@@ -21,6 +21,11 @@ export interface ViewSlice {
   sectionFlipped: boolean;
 
   viewpoints: Viewpoint[];
+  /** Id of the viewpoint a 'viewpoint' camera request should fly to. */
+  viewpointToRestore: string | null;
+  /** Name waiting to be turned into a full record once CameraRig reads its refs. */
+  pendingViewpointName: string | null;
+  viewpointSaveNonce: number;
 
   /**
    * What the camera should do next, plus a nonce that always changes — even a
@@ -36,6 +41,7 @@ export interface ViewSlice {
   requestReset: () => void;
   requestFitModel: () => void;
   requestFocusSelected: () => void;
+  requestViewpoint: (id: string) => void;
   requestExport: () => void;
   toggleExplode: () => void;
   setExplodeFactor: (v: number) => void;
@@ -44,7 +50,8 @@ export interface ViewSlice {
   setSectionAxis: (axis: SectionAxis) => void;
   setSectionPosition: (v: number) => void;
   toggleSectionFlip: () => void;
-  saveViewpoint: (name: string) => void;
+  requestSaveViewpoint: (name: string) => void;
+  commitViewpoint: (v: Viewpoint) => void;
   deleteViewpoint: (id: string) => void;
 }
 
@@ -61,6 +68,9 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
   sectionFlipped: false,
 
   viewpoints: MOCK_VIEWPOINTS,
+  viewpointToRestore: null,
+  pendingViewpointName: null,
+  viewpointSaveNonce: 0,
 
   cameraRequestKind: null,
   cameraRequestNonce: 0,
@@ -88,6 +98,12 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
       cameraRequestKind: 'focus',
       cameraRequestNonce: s.cameraRequestNonce + 1,
     })),
+  requestViewpoint: (id) =>
+    set((s) => ({
+      viewpointToRestore: id,
+      cameraRequestKind: 'viewpoint',
+      cameraRequestNonce: s.cameraRequestNonce + 1,
+    })),
   requestExport: () => set((s) => ({ exportRequestNonce: s.exportRequestNonce + 1 })),
   toggleExplode: () => set((s) => ({ exploded: !s.exploded })),
   setExplodeFactor: (explodeFactor) => set({ explodeFactor }),
@@ -96,12 +112,15 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
   setSectionAxis: (sectionAxis) => set({ sectionAxis }),
   setSectionPosition: (sectionPosition) => set({ sectionPosition }),
   toggleSectionFlip: () => set((s) => ({ sectionFlipped: !s.sectionFlipped })),
-  saveViewpoint: (name) =>
+  requestSaveViewpoint: (name) =>
     set((s) => ({
-      viewpoints: [
-        ...s.viewpoints,
-        { id: `v${Date.now()}`, name, mode: s.mode, saved: 'just now' },
-      ],
+      pendingViewpointName: name,
+      viewpointSaveNonce: s.viewpointSaveNonce + 1,
+    })),
+  commitViewpoint: (v) =>
+    set((s) => ({
+      viewpoints: [...s.viewpoints, v],
+      pendingViewpointName: null,
     })),
   deleteViewpoint: (id) =>
     set((s) => ({ viewpoints: s.viewpoints.filter((v) => v.id !== id) })),

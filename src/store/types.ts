@@ -17,7 +17,7 @@ export type LayerName = (typeof LAYERS)[number];
 export type Discipline = 'STR' | 'ARC' | 'MEP' | 'TMP';
 export type ViewMode = 'realistic' | 'engineering';
 export type CameraShot = 'front' | 'side' | 'iso' | 'joint';
-export type CameraRequestKind = 'shot' | 'reset' | 'fit' | 'focus';
+export type CameraRequestKind = 'shot' | 'reset' | 'fit' | 'focus' | 'viewpoint';
 export type SectionAxis = 'x' | 'y' | 'z';
 export type MeasureMode = 'distance' | 'horizontal' | 'vertical' | 'angle' | 'area';
 export type Playback = 'idle' | 'playing' | 'paused' | 'finished';
@@ -77,5 +77,7 @@ export interface Viewpoint {
   id: string;
   name: string;
   mode: ViewMode;
+  position: [number, number, number];
+  target: [number, number, number];
   saved: string;
 }

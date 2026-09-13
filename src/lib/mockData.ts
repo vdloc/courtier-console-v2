@@ -30,8 +30,22 @@ export const PHASES: TimelinePhase[] = [
 export const DURATION = 18;
 
 export const MOCK_VIEWPOINTS: Viewpoint[] = [
-  { id: 'v1', name: 'Base connection A1', mode: 'engineering', saved: '2 days ago' },
-  { id: 'v2', name: 'Services clash — L01', mode: 'engineering', saved: 'yesterday' },
+  {
+    id: 'v1',
+    name: 'Base connection A1',
+    mode: 'engineering',
+    position: [4, 3.5, 4],
+    target: [0, 1, 0],
+    saved: '2 days ago',
+  },
+  {
+    id: 'v2',
+    name: 'Services clash — L01',
+    mode: 'engineering',
+    position: [10, 6, 12],
+    target: [14.4, 3.5, 3.6],
+    saved: 'yesterday',
+  },
 ];
 
 export const ELEMENT_LABELS: Record<string, string> = {

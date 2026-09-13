@@ -51,7 +51,8 @@ export function ViewControls() {
   const toggleSectionFlip = useAppStore((s) => s.toggleSectionFlip);
 
   const viewpoints = useAppStore((s) => s.viewpoints);
-  const saveViewpoint = useAppStore((s) => s.saveViewpoint);
+  const requestSaveViewpoint = useAppStore((s) => s.requestSaveViewpoint);
+  const requestViewpoint = useAppStore((s) => s.requestViewpoint);
   const deleteViewpoint = useAppStore((s) => s.deleteViewpoint);
   const [vpName, setVpName] = useState('');
 
@@ -173,7 +174,7 @@ export function ViewControls() {
               size="sm"
               disabled={!vpName.trim()}
               onClick={() => {
-                saveViewpoint(vpName.trim());
+                requestSaveViewpoint(vpName.trim());
                 setVpName('');
               }}
             >
@@ -182,8 +183,14 @@ export function ViewControls() {
           </div>
           {viewpoints.map((v) => (
             <div key={v.id} className={local.viewpoint}>
-              <span className={local.vpName}>{v.name}</span>
-              <span className={local.vpMeta}>{v.saved}</span>
+              <button
+                type="button"
+                className={local.vpRestore}
+                onClick={() => requestViewpoint(v.id)}
+              >
+                <span className={local.vpName}>{v.name}</span>
+                <span className={local.vpMeta}>{v.saved}</span>
+              </button>
               <button
                 type="button"
                 className={local.vpDelete}

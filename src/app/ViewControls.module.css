@@ -55,6 +55,19 @@
   background: var(--sunken);
 }
 
+.vpRestore {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
 .vpName {
   flex: 1 1 auto;
   overflow: hidden;
@@ -62,7 +75,6 @@
   white-space: nowrap;
   color: var(--primary);
   font-size: var(--fs-small);
-  cursor: pointer;
 }
 
 .vpMeta {
