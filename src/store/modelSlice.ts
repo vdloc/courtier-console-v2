@@ -11,7 +11,6 @@ export interface ModelSlice {
   filter: string;
   collapsed: Set<string>;
   hidden: Set<string>;
-  locked: Set<string>;
   selected: ComponentInfo | null;
   layers: Record<LayerName, boolean>;
   /** Exported-model members by node name; kept apart from MOCK_COMPONENTS so neither shadows the other's ids. */
@@ -24,7 +23,6 @@ export interface ModelSlice {
   toggleCollapsed: (id: string) => void;
   select: (id: string | null) => void;
   setHidden: (id: string, hidden: boolean) => void;
-  setLocked: (id: string, locked: boolean) => void;
   isolateSelected: () => void;
   showEverything: () => void;
   toggleLayer: (layer: LayerName) => void;
@@ -51,7 +49,6 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
   filter: '',
   collapsed: new Set<string>(['L02', 'L03']),
   hidden: new Set<string>(),
-  locked: new Set<string>(),
   selected: null,
   layers: { ...INITIAL_LAYERS },
   glbComponents: {},
@@ -96,13 +93,6 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
         else next.delete(target);
       }
       return { hidden: next };
-    }),
-  setLocked: (id, locked) =>
-    set((s) => {
-      const next = new Set(s.locked);
-      if (locked) next.add(id);
-      else next.delete(id);
-      return { locked: next };
     }),
   isolateSelected: () =>
     set((s) => {

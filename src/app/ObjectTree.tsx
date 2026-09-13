@@ -10,6 +10,7 @@ interface Row {
   node: TreeNode;
   depth: number;
   hasChildren: boolean;
+  open: boolean;
 }
 
 const WINDOW_THRESHOLD = 300;
@@ -22,15 +23,12 @@ const STATUS_CLASS: Record<Status, string> = {
   Clash: styles.clash,
 };
 
-/**
- * `filter` arrives lowercased. `searchCollapsed` lets a query reach members inside collapsed
- * groups — needed for the GLB tree, which starts fully collapsed.
- */
+/** `filter` arrives lowercased. A non-empty filter opens every group, so a match inside a
+ * collapsed level is never hidden by a flag the query can't see past. */
 function flatten(
   node: TreeNode,
   collapsed: Set<string>,
   filter: string,
-  searchCollapsed: boolean,
   depth = 0,
   out: Row[] = [],
 ): Row[] {
@@ -41,15 +39,13 @@ function flatten(
   // A filtered-out container still shows when a descendant matches, otherwise
   // searching for a part would hide the level it lives on.
   const kept: Row[] = [];
-  const open = !collapsed.has(node.id) || (searchCollapsed && filter !== '');
+  const open = !collapsed.has(node.id) || filter !== '';
   if (hasChildren && open) {
-    children.forEach((c) =>
-      flatten(c, collapsed, filter, searchCollapsed, depth + 1, kept),
-    );
+    children.forEach((c) => flatten(c, collapsed, filter, depth + 1, kept));
   }
 
   if (match || kept.length > 0) {
-    out.push({ node, depth, hasChildren });
+    out.push({ node, depth, hasChildren, open });
     out.push(...kept);
   }
   return out;
@@ -65,15 +61,13 @@ export function ObjectTree() {
   const selected = useAppStore((s) => s.selected);
   const select = useAppStore((s) => s.select);
   const hidden = useAppStore((s) => s.hidden);
-  const locked = useAppStore((s) => s.locked);
   const setHidden = useAppStore((s) => s.setHidden);
-  const setLocked = useAppStore((s) => s.setLocked);
   const isolateSelected = useAppStore((s) => s.isolateSelected);
   const showEverything = useAppStore((s) => s.showEverything);
 
   const rows = useMemo(
-    () => flatten(tree, collapsed, filter.toLowerCase(), glb !== null),
-    [tree, collapsed, filter, glb],
+    () => flatten(tree, collapsed, filter.toLowerCase()),
+    [tree, collapsed, filter],
   );
 
   // A GLB group row reads hidden when every member under it is.
@@ -178,9 +172,12 @@ export function ObjectTree() {
         ) : (
           <>
             {first > 0 && <div style={{ height: first * view.rowH }} aria-hidden />}
-            {rows.slice(first, last).map(({ node, depth, hasChildren }) => {
+            {rows.slice(first, last).map(({ node, depth, hasChildren, open }) => {
               const isHidden = isRowHidden(node.id);
-              const isLocked = locked.has(node.id);
+              // Groups are forced open while filtering; collapsing one would be invisible.
+              const toggle = () => {
+                if (hasChildren && filter === '') toggleCollapsed(node.id);
+              };
               return (
                 <div
                   key={node.id}
@@ -188,26 +185,21 @@ export function ObjectTree() {
                   data-selected={selected?.id === node.id ? 'true' : undefined}
                   data-hidden={isHidden ? 'true' : undefined}
                   style={{ paddingLeft: 4 + depth * 12 }}
-                  onClick={() =>
-                    hasChildren ? toggleCollapsed(node.id) : select(node.id)
-                  }
+                  onClick={() => (hasChildren ? toggle() : select(node.id))}
                   role="treeitem"
                   aria-selected={selected?.id === node.id}
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      if (hasChildren) toggleCollapsed(node.id);
+                      if (hasChildren) toggle();
                       else select(node.id);
                     }
                   }}
                 >
                   <span className={styles.caret}>
                     {hasChildren && (
-                      <Icon
-                        name={collapsed.has(node.id) ? 'chevron-right' : 'chevron-down'}
-                        size={12}
-                      />
+                      <Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
                     )}
                   </span>
                   <span
@@ -228,12 +220,11 @@ export function ObjectTree() {
                   <button
                     type="button"
                     className={styles.iconToggle}
-                    data-on={isHidden || isLocked ? 'true' : undefined}
+                    data-on={isHidden ? 'true' : undefined}
                     aria-label={isHidden ? 'Show' : 'Hide'}
                     onClick={(e) => {
                       e.stopPropagation();
                       setHidden(node.id, !isHidden);
-                      if (isLocked) setLocked(node.id, false);
                     }}
                   >
                     <Icon name="eye" size={13} />
