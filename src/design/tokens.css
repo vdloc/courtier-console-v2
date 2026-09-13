@@ -59,6 +59,9 @@
   /* Contact shadow tint. Warm, never black: a shadow is the part of a surface
      lit only by the bounce, and a black one reads as a hole in the ground. */
   --lit-contact: #2e2419;
+  /* Ambient occlusion tint, for the same reason: occlusion is the part of a
+     surface reached only by bounced light, and outdoors that bounce is warm. */
+  --lit-occlusion: #241b12;
 
   /* --- type ------------------------------------------------------------- */
   --sans: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;

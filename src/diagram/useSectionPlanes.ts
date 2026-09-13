@@ -11,8 +11,18 @@ const AXIS_NORMAL: Record<SectionAxis, [number, number, number]> = {
 };
 const AXIS_INDEX: Record<SectionAxis, number> = { x: 0, y: 1, z: 2 };
 
-/** Member materials only — clipping the renderer globally would also cut dimension leaders. */
-export function useSectionPlanes(): Plane[] {
+interface Bounds {
+  min: [number, number, number];
+  max: [number, number, number];
+}
+
+/**
+ * Member materials only — clipping the renderer globally would also cut dimension leaders.
+ *
+ * `bounds` is whatever the slider's 0..1 should span. The flat modes and the
+ * exported model occupy different ground, so each passes its own.
+ */
+export function useSectionPlanes(bounds: Bounds = BOUNDS): Plane[] {
   const enabled = useAppStore((s) => s.sectionEnabled);
   const axis = useAppStore((s) => s.sectionAxis);
   const position = useAppStore((s) => s.sectionPosition);
@@ -21,9 +31,9 @@ export function useSectionPlanes(): Plane[] {
   return useMemo(() => {
     if (!enabled) return [];
     const i = AXIS_INDEX[axis];
-    const coord = BOUNDS.min[i] + position * (BOUNDS.max[i] - BOUNDS.min[i]);
+    const coord = bounds.min[i] + position * (bounds.max[i] - bounds.min[i]);
     const plane = new Plane(new Vector3(...AXIS_NORMAL[axis]), -coord);
     if (flipped) plane.negate();
     return [plane];
-  }, [enabled, axis, position, flipped]);
+  }, [bounds, enabled, axis, position, flipped]);
 }

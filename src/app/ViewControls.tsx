@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Icon, Input, Slider } from '../ui/primitives';
-import type { CameraShot, SectionAxis, ViewMode } from '../store/types';
+import type { CameraShot, Quality, SectionAxis, ViewMode } from '../store/types';
 import { useAppStore } from '../store/useAppStore';
 import styles from './panels.module.css';
 import local from './ViewControls.module.css';
@@ -25,11 +25,23 @@ const MODES: { id: ViewMode; label: string; hint: string }[] = [
 
 const AXES: SectionAxis[] = ['x', 'y', 'z'];
 
+/**
+ * Realistic mode's fidelity tiers. The flat modes draw the same either way,
+ * so the control only matters — and is only enabled — in realistic mode.
+ */
+const QUALITIES: { id: Quality; label: string }[] = [
+  { id: 'high', label: 'High' },
+  { id: 'balanced', label: 'Balanced' },
+  { id: 'performance', label: 'Fast' },
+];
+
 export function ViewControls() {
   const shot = useAppStore((s) => s.shot);
   const setShot = useAppStore((s) => s.setShot);
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
+  const quality = useAppStore((s) => s.quality);
+  const setQuality = useAppStore((s) => s.setQuality);
   const exploded = useAppStore((s) => s.exploded);
   const toggleExplode = useAppStore((s) => s.toggleExplode);
   const tour = useAppStore((s) => s.tour);
@@ -129,6 +141,26 @@ export function ViewControls() {
             >
               <span className={local.modeLabel}>{m.label}</span>
               <span className={local.modeHint}>{m.hint}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <header className={styles.header}>
+          <span className={styles.title}>Quality</span>
+        </header>
+        <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
+          {QUALITIES.map((q) => (
+            <button
+              key={q.id}
+              type="button"
+              className={styles.pick}
+              data-active={quality === q.id ? 'true' : undefined}
+              disabled={mode !== 'realistic'}
+              onClick={() => setQuality(q.id)}
+            >
+              {q.label}
             </button>
           ))}
         </div>

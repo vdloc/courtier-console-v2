@@ -74,3 +74,65 @@ export const SHADOW_FAR = 125;
  * Scaled with the texel, or a tightened map peter-pans at the connections.
  */
 export const NORMAL_BIAS_PER_TEXEL = 0.341;
+
+/**
+ * Extent of every mesh in the exported model with the construction clip at
+ * its end, metres, measured in the loaded scene. The section slider maps 0..1
+ * across this, and the explode pushes members away from its centre. The flat
+ * modes' BOUNDS in diagram/model.ts describe different geometry and would put
+ * the cut in the wrong place.
+ */
+export const MODEL_BOUNDS = {
+  min: [-1.2, -0.74, -19.2] as [number, number, number],
+  max: [30, 14.72, 1.2] as [number, number, number],
+};
+
+/**
+ * Distance past which a detail part is not drawn, metres, keyed by the GLB's
+ * `element_type`. Ported from the demo viewer's DetailCulling.
+ *
+ * For a 24 mm bolt there is no meaningful lower level of detail, only present
+ * or absent — and bolts, welds and stiffeners are two thirds of the model's
+ * 3362 draw calls while covering under a pixel each at framing distance.
+ * Thresholds are per type because a 100 mm plate stays legible far longer
+ * than an M24 nut.
+ */
+export const LOD_DISTANCE: Partial<Record<string, number>> = {
+  bolt: 18,
+  weld: 14,
+  stiffener: 45,
+  hanger: 60,
+  toe_board: 60,
+  guard_post: 70,
+  splice_plate: 60,
+  end_plate: 80,
+};
+
+/** The quality preset is the user choosing between frame rate and fastener detail. */
+export const LOD_SCALE = { high: 1.6, balanced: 1.0, performance: 0.6 } as const;
+
+/**
+ * Metalness overrides by material name.
+ *
+ * The export's metallic-roughness textures read ~0.99 in the metal channel on
+ * every material, so the scalar factor alone decides metalness — and the
+ * factors were 0.05 to 0.60, blends that describe no real surface. A paint
+ * film or pipe lagging is a dielectric however much steel is underneath it;
+ * a bare bolt or a weld bead is a conductor. Finish belongs in roughness,
+ * which the textures already carry.
+ */
+export const METALNESS: Partial<Record<string, number>> = {
+  VF_Steel_Painted: 0,
+  VF_Rail_Safety: 0,
+  VF_Pipe_CHW: 0,
+  VF_Pipe_LTHW: 0,
+  VF_Steel_Bolt: 1,
+  VF_Weld_Bead: 1,
+};
+
+/**
+ * Ambient occlusion radius, metres: the scale of a connection — a beam
+ * meeting a column, the inside of an end plate. Larger puts a grey wash over
+ * the whole frame and darkens nothing that reads as contact.
+ */
+export const AO_RADIUS = 0.6;

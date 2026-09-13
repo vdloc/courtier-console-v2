@@ -1,6 +1,8 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useThree } from '@react-three/fiber';
 import { ContactShadows, Environment } from '@react-three/drei';
-import { Object3D } from 'three';
+import { Object3D, type DirectionalLight } from 'three';
+import { Effects } from './Effects';
 import { StructureGlb } from './StructureGlb';
 import {
   BACKGROUND_INTENSITY,
@@ -34,7 +36,10 @@ import { useAppStore } from '../../store/useAppStore';
  * CSS instead, which is a different property and cannot race with this one.
  */
 export function RealisticScene() {
+  const gl = useThree((state) => state.gl);
   const quality = useAppStore((s) => s.quality);
+  const playback = useAppStore((s) => s.playback);
+  const lightRef = useRef<DirectionalLight>(null);
 
   // The sun is aimed at the model rather than at the origin so the direction
   // decoded from the HDRI is preserved while the shadow frustum stays tight.
@@ -53,11 +58,64 @@ export function RealisticScene() {
     [],
   );
 
-  const shadowMapSize = quality === 'high' ? 2048 : 1024;
-  // Scaled with the texel, or the tightened map peter-pans at the connections
-  // — the joints this viewer exists to inspect.
-  const shadowNormalBias =
-    (NORMAL_BIAS_PER_TEXEL * SHADOW_EXTENT * 2) / shadowMapSize;
+  // --- shadow map: redrawn when the structure changes, not every frame -----
+  //
+  // The map re-renders all ~3360 casters from the sun's point of view, and
+  // with `autoUpdate` on it did so every frame — doubling the draw calls of a
+  // model that does not move. A camera orbit changes nothing about where
+  // shadows fall. So it is redrawn continuously only during playback, and
+  // otherwise once per change: StructureGlb raises `needsUpdate` on every
+  // seek, explode, layer, hide, section and culling change.
+  useEffect(() => {
+    gl.shadowMap.autoUpdate = playback === 'playing';
+    gl.shadowMap.needsUpdate = true;
+    return () => {
+      // The flat modes cast no shadows, but hand the renderer back as found.
+      gl.shadowMap.autoUpdate = true;
+    };
+  }, [gl, playback]);
+
+  // --- shadow map size follows quality -------------------------------------
+  //
+  // Not a `shadow-mapSize` prop. three reads `mapSize` only when it allocates
+  // the render target, and allocates only when `shadow.map` is null — so a
+  // prop change writes a Vector2 and resizes nothing, while the normal bias
+  // beside it DOES update, leaving a 2048-tuned bias on a 1024 map. The
+  // target has to be disposed and nulled for the new size to take, and the
+  // bias is derived from the size actually allocated, in the same place.
+  // Layout effect so the first shadow render already has the right size.
+  useLayoutEffect(() => {
+    const light = lightRef.current;
+    if (!light) return;
+    const size = quality === 'high' ? 2048 : 1024;
+    if (light.shadow.mapSize.width !== size) {
+      light.shadow.mapSize.set(size, size);
+      light.shadow.map?.dispose();
+      light.shadow.map = null;
+    }
+    // Scaled with the texel, or the tightened map peter-pans at the
+    // connections — the joints this viewer exists to inspect.
+    light.shadow.normalBias = (NORMAL_BIAS_PER_TEXEL * SHADOW_EXTENT * 2) / size;
+    gl.shadowMap.needsUpdate = true;
+  }, [gl, quality]);
+
+  // --- contact shadow: rendered once per change ----------------------------
+  //
+  // drei renders ContactShadows' depth pass `frames` times, and defaults to
+  // Infinity: a third full render of the model per frame. With `frames={1}`
+  // its counter lives in the component body, so any re-render of this
+  // component re-arms it for exactly one more pass. Subscribing to the state
+  // that moves geometry is what makes that re-render happen when it matters.
+  const moving = playback === 'playing';
+  useAppStore((s) => s.progress);
+  useAppStore((s) => s.layers);
+  useAppStore((s) => s.hidden);
+  useAppStore((s) => s.exploded);
+  useAppStore((s) => s.explodeFactor);
+  useAppStore((s) => s.sectionEnabled);
+  useAppStore((s) => s.sectionAxis);
+  useAppStore((s) => s.sectionPosition);
+  useAppStore((s) => s.sectionFlipped);
 
   return (
     <>
@@ -65,14 +123,13 @@ export function RealisticScene() {
 
       <primitive object={shadowTarget} />
       <directionalLight
+        ref={lightRef}
         castShadow
         position={keyPosition}
         target={shadowTarget}
         intensity={KEY_INTENSITY}
         color={PALETTE.litKey}
-        shadow-mapSize={[shadowMapSize, shadowMapSize]}
         shadow-bias={-0.0004}
-        shadow-normalBias={shadowNormalBias}
         shadow-camera-left={-SHADOW_EXTENT}
         shadow-camera-right={SHADOW_EXTENT}
         shadow-camera-top={SHADOW_EXTENT}
@@ -114,9 +171,12 @@ export function RealisticScene() {
             blur={2.4}
             opacity={0.3}
             color={PALETTE.litContact}
+            frames={moving ? Infinity : 1}
           />
         )}
       </Suspense>
+
+      <Effects />
     </>
   );
 }

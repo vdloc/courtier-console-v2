@@ -21,6 +21,7 @@ const TOKENS = [
   '--lit-fill',
   '--lit-fog',
   '--lit-contact',
+  '--lit-occlusion',
 ] as const;
 
 type Token = (typeof TOKENS)[number];
@@ -52,6 +53,7 @@ export const PALETTE = {
   litFill: t['--lit-fill'],
   litFog: t['--lit-fog'],
   litContact: t['--lit-contact'],
+  litOcclusion: t['--lit-occlusion'],
 };
 
 export type DiagramRole = 'translucent' | 'solid' | 'service';

@@ -1,15 +1,7 @@
-import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
+import { Canvas, type ThreeEvent } from '@react-three/fiber';
 import { Edges, OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { useEffect, useMemo } from 'react';
-import {
-  AgXToneMapping,
-  DoubleSide,
-  NoToneMapping,
-  PCFSoftShadowMap,
-  SRGBColorSpace,
-  type Material,
-  type Plane,
-} from 'three';
+import { useMemo } from 'react';
+import { DoubleSide, PCFSoftShadowMap, SRGBColorSpace, type Plane } from 'three';
 import { RealisticScene } from './realistic/RealisticScene';
 import { EXPOSURE, SHADOW_CENTRE } from './realistic/rig';
 import { BAY_X, BAY_Y, PARTS, STOREY, type Part } from './model';
@@ -182,18 +174,19 @@ export function DiagramScene() {
     <Canvas
       dpr={[1, 2]}
       shadows={realistic ? { type: PCFSoftShadowMap } : false}
+      /*
+       * No tone mapping on the renderer, in any mode. The flat modes' colours
+       * were chosen against an untone-mapped pipeline, and realistic mode
+       * renders through a composer, where a renderer-level curve compiles out
+       * of the material shaders and silently stops applying. Its AgX curve
+       * lives in realistic/Effects.tsx instead. Exposure stays here: it is
+       * only read under a curve, so the flat modes never see it.
+       */
+      flat
       gl={{
         antialias: true,
         preserveDrawingBuffer: true,
-        /*
-         * Both the curve (in `ToneMappingSwitch`) and this exposure are safe
-         * to set on the renderer only because every render in this app goes
-         * straight to the screen. Introduce a postprocessing composer and
-         * three compiles tone mapping out of the material shader, at which
-         * point this silently stops applying and the curve has to move into
-         * the composer.
-         */
-        toneMappingExposure: realistic ? EXPOSURE : 1,
+        toneMappingExposure: EXPOSURE,
       }}
       onCreated={({ gl, scene, camera }) => {
         gl.localClippingEnabled = true;
@@ -213,7 +206,6 @@ export function DiagramScene() {
       onPointerMissed={() => useAppStore.getState().select(null)}
       style={{ background: PALETTE.canvas }}
     >
-      <ToneMappingSwitch realistic={realistic} />
       {/* The two models do not occupy the same ground. The procedural frame is
           built outward from the origin; the exported one sits around
           SHADOW_CENTRE, roughly 20 m away in z. Aiming the controls at the
@@ -235,37 +227,4 @@ export function DiagramScene() {
       {!realistic && <Annotations />}
     </Canvas>
   );
-}
-
-/**
- * AgX over ACES for a sunlit exterior: ACES shifts saturated hues toward the
- * highlights, which turns warm sun on painted steel orange at the hot end. The
- * flat modes stay untone-mapped — their system colours were chosen by eye
- * against a linear pipeline, and putting a curve under them now would shift
- * every one of them.
- *
- * Switched from inside the Canvas because `gl` is only reachable through
- * R3F's context; doing it in `onCreated` alone would leave the curve stuck at
- * whatever the first-mounted mode wanted. `needsUpdate` is the part that is
- * easy to miss: three compiles the tone mapping function into each material's
- * shader, so changing the renderer's mode does nothing to already-built
- * programs.
- */
-function ToneMappingSwitch({ realistic }: { realistic: boolean }) {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-
-  useEffect(() => {
-    gl.toneMapping = realistic ? AgXToneMapping : NoToneMapping;
-    gl.toneMappingExposure = realistic ? EXPOSURE : 1;
-    scene.traverse((object) => {
-      const material = (object as { material?: Material | Material[] }).material;
-      if (!material) return;
-      for (const entry of Array.isArray(material) ? material : [material]) {
-        entry.needsUpdate = true;
-      }
-    });
-  }, [gl, scene, realistic]);
-
-  return null;
 }
