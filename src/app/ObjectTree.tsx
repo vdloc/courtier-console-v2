@@ -142,7 +142,7 @@ export function ObjectTree() {
 
       <div className={styles.filter}>
         <Input
-          placeholder="Mark, grid ref, type or level"
+          placeholder="Mark, type or level"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           aria-label="Filter model"
