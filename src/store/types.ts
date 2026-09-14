@@ -46,7 +46,8 @@ export interface ComponentInfo extends ComponentData {
   length: number;
   /** Absent for exported-model members: the GLB carries no mass. */
   mass?: number;
-  status: Status;
+  /** Absent for exported-model members: the GLB carries no construction-progress field. */
+  status?: Status;
   layer: LayerName;
   connected: string[];
 }

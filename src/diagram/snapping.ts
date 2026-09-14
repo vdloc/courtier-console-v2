@@ -20,7 +20,6 @@
 
 import { Box3, Vector2, Vector3 } from 'three';
 import type { Camera, Intersection, Object3D, Plane } from 'three';
-import { PARTS_BY_ID, type Part } from './model';
 import { glbMember, type GlbMember } from './realistic/glbMembers';
 
 export type SnapType = 'vertex' | 'midpoint' | 'edge' | 'face';
@@ -53,28 +52,19 @@ function boxCorners({ min: a, max: b }: Box3): Vector3[] {
   ];
 }
 
-export type MemberRef =
-  { model: 'glb'; member: GlbMember } | { model: 'procedural'; part: Part };
-
-/**
- * The one rule for which model a name belongs to. Pads share names across both models,
- * so while the GLB is mounted its member wins; the registry is empty otherwise.
- */
-export function memberByName(name: string): MemberRef | null {
-  const member = glbMember(name);
-  if (member) return { model: 'glb', member };
-  const part = PARTS_BY_ID[name];
-  return part ? { model: 'procedural', part } : null;
+export interface MemberRef {
+  member: GlbMember;
 }
 
-/** The member's own box in local space: the exported mesh's geometry bounds, or procedural size. */
+export function memberByName(name: string): MemberRef | null {
+  const member = glbMember(name);
+  return member ? { member } : null;
+}
+
+/** The member's own box in local space: the exported mesh's geometry bounds. */
 function localBox(object: Object3D): Box3 | null {
   const ref = memberByName(object.name);
   if (!ref) return null;
-  if (ref.model === 'procedural') {
-    const half = new Vector3(...ref.part.size).multiplyScalar(0.5);
-    return new Box3(half.clone().negate(), half);
-  }
   const { geometry } = ref.member.mesh;
   if (!geometry.boundingBox) geometry.computeBoundingBox();
   return geometry.boundingBox;

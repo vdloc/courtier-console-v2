@@ -35,7 +35,7 @@ import {
   registerGlbMembers,
   type GlbMember,
 } from './glbMembers';
-import { applyGlbMode, disposeGlbMaterials } from './glbMaterials';
+import { applyGlbMode, disposeGlbMaterials, materialsFor } from './glbMaterials';
 import { PALETTE } from '../palette';
 import { useAppStore } from '../../store/useAppStore';
 import { LAYERS, type ComponentInfo, type LayerName } from '../../store/types';
@@ -100,7 +100,7 @@ function componentFrom(object: Object3D, layer: LayerName): ComponentInfo | null
     section: extras.section ?? '',
     material_spec: extras.material_spec ?? '',
     length: longestDimension(extras.dimensions),
-    status: 'Installed',
+    // No construction-progress field in the export — unlike model.ts's status.
     layer,
     connected: (extras.connected_objects ?? '')
       .split(',')
@@ -120,7 +120,7 @@ export function layerOf(object: Object3D): LayerName | null {
   return null;
 }
 
-/** The exported structure, mounted in realistic mode only. */
+/** The exported structure — the one model both modes draw. */
 export function StructureGlb() {
   const { scene, animations } = useGLTF(MODEL_URL, DRACO_PATH);
   const gl = useThree((state) => state.gl);
@@ -133,12 +133,7 @@ export function StructureGlb() {
   const explodeFactor = useAppStore((s) => s.explodeFactor);
   const registerComponents = useAppStore((s) => s.registerComponents);
   const planes = useSectionPlanes(MODEL_BOUNDS);
-
-  // Temporary: previews the Engineering material set before the real mode
-  // cutover lands (docs/GLB-BOTH-MODES.md condition 4). Deleted with it.
-  const engineeringPreview =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).has('engineeringGlb');
+  const mode = useAppStore((s) => s.mode);
 
   const mixerRef = useRef<AnimationMixer | null>(null);
   const actionsRef = useRef<AnimationAction[]>([]);
@@ -155,6 +150,9 @@ export function StructureGlb() {
     const components: Record<string, ComponentInfo> = {};
     const records: MemberRecord[] = [];
     const materials = new Set<Material>();
+    // Both mode variants, so the clipping effect below reaches whichever one
+    // isn't currently assigned to the mesh too — see CHECKLIST §2.1.
+    const clipMaterials = new Set<Material>();
 
     scene.traverse((object) => {
       if (!(object instanceof Mesh)) return;
@@ -169,7 +167,7 @@ export function StructureGlb() {
           new EdgesGeometry(object.geometry, 15),
           new LineBasicMaterial({ color: PALETTE.edge }),
         );
-        edgeLine.visible = engineeringPreview;
+        edgeLine.visible = mode === 'engineering';
         object.add(edgeLine);
       }
       records.push({
@@ -183,8 +181,11 @@ export function StructureGlb() {
         : [object.material]) {
         materials.add(material);
       }
-      // Collected above from the Realistic material, before this swap.
-      applyGlbMode(object, type, engineeringPreview ? 'engineering' : 'realistic');
+      // Read before the swap below, so `.realistic` is the true GLTF material.
+      const pair = materialsFor(object, type);
+      clipMaterials.add(pair.realistic);
+      clipMaterials.add(pair.engineering);
+      applyGlbMode(object, type, mode === 'engineering' ? 'engineering' : 'realistic');
 
       const layer = layerOf(object);
       if (!layer) return;
@@ -193,7 +194,7 @@ export function StructureGlb() {
     });
     recordsRef.current = records;
     registerGlbMembers(records);
-    materialsRef.current = [...materials];
+    materialsRef.current = [...clipMaterials];
 
     // Materials and textures belong to useGLTF's cache, so these writes must stay idempotent.
     const anisotropy = gl.capabilities.getMaxAnisotropy();
@@ -257,6 +258,21 @@ export function StructureGlb() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, animations, duration, registerComponents, gl]);
+
+  // The mount effect above only sets the material/edges for the mode active
+  // at load; a later mode toggle needs its own pointer-swap pass.
+  useEffect(() => {
+    for (const record of recordsRef.current) {
+      const type = (record.mesh.userData as GlbExtras).element_type;
+      applyGlbMode(
+        record.mesh,
+        type,
+        mode === 'engineering' ? 'engineering' : 'realistic',
+      );
+      if (record.edgeLine) record.edgeLine.visible = mode === 'engineering';
+    }
+    gl.shadowMap.needsUpdate = true;
+  }, [mode, gl]);
 
   function applyExplode() {
     const store = useAppStore.getState();
@@ -391,7 +407,9 @@ export function StructureGlb() {
       lit.dispose();
       highlightRef.current = null;
     };
-  }, [selectedId, scene]);
+    // mode: a mode toggle swaps mesh.material out from under this effect (see
+    // the mode-swap effect above, declared first so this always clones fresh).
+  }, [selectedId, scene, mode]);
 
   return (
     <primitive

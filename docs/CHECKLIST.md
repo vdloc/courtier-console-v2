@@ -34,7 +34,7 @@ Báo lại đã chạy cổng nào và nó in ra gì. "Chắc ổn" không phả
 - [ ] Không có type của renderer (`Object3D`, `Vector3`, `Plane`, …) ở bất kỳ đâu trong `src/store/`
 - [ ] Panel nhận zero prop, đọc store qua selector
 - [ ] Comment một tới hai dòng, chỉ ở chỗ code không tự nói được; lý do đi vào commit message
-- [ ] `src/diagram/model.ts` vẫn là generator duy nhất — parts, component record và cây explorer đều dẫn xuất từ nó, nên id không thể lệch nhau
+- [ ] `src/diagram/realistic/StructureGlb.tsx` là nguồn duy nhất cho cả hai mode — Engineering không còn vẽ model sinh ra riêng; id trong viewport và Model Explorer đều đọc từ GLB nên không thể lệch nhau. `src/diagram/model.ts` còn tồn tại làm file nhưng không còn được tham chiếu ở runtime (xem commit "Engineering draws the GLB")
 
 ---
 

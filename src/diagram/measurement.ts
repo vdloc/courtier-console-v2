@@ -8,7 +8,6 @@
 import { Vector3 } from 'three';
 import type { MeasureMode, MeasurePoint } from '../store/types';
 import { MODE_POINTS } from '../store/measureSlice';
-import { explodedPosition } from './model';
 import { glbLocalToWorld } from './realistic/glbMembers';
 import { memberByName } from './snapping';
 
@@ -25,8 +24,8 @@ export function formatMetres(value: number): string {
 }
 
 /**
- * Null when the point's member isn't in the model on screen (an exported member
- * while the GLB is unmounted): a stale world position would read as a real number.
+ * Null when the point's member isn't in the model on screen (the GLB not yet
+ * mounted): a stale world position would read as a real number.
  */
 export function resolveMeasurePoint(
   point: MeasurePoint,
@@ -35,16 +34,7 @@ export function resolveMeasurePoint(
 ): Vector3 | null {
   const ref = memberByName(point.partId);
   if (!ref) return null;
-  if (ref.model === 'glb') {
-    return glbLocalToWorld(ref.member, point.local, exploded ? explodeFactor : 0);
-  }
-  const { part } = ref;
-  const base = exploded ? explodedPosition(part, explodeFactor) : part.position;
-  return new Vector3(
-    base[0] + point.local[0],
-    base[1] + point.local[1],
-    base[2] + point.local[2],
-  );
+  return glbLocalToWorld(ref.member, point.local, exploded ? explodeFactor : 0);
 }
 
 export function evaluate(

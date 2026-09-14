@@ -3,7 +3,6 @@ import { useThree } from '@react-three/fiber';
 import { ContactShadows, Environment } from '@react-three/drei';
 import { Object3D, type DirectionalLight } from 'three';
 import { Effects } from './Effects';
-import { StructureGlb } from './StructureGlb';
 import {
   BACKGROUND_INTENSITY,
   ENVIRONMENT_INTENSITY,
@@ -28,12 +27,6 @@ export function RealisticScene() {
   const quality = useAppStore((s) => s.quality);
   const playback = useAppStore((s) => s.playback);
   const lightRef = useRef<DirectionalLight>(null);
-
-  // Points name members of one model only, so a mode switch either way drops them.
-  useEffect(() => {
-    useAppStore.getState().clearMeasurement();
-    return () => useAppStore.getState().clearMeasurement();
-  }, []);
 
   const shadowTarget = useMemo(() => {
     const target = new Object3D();
@@ -108,7 +101,6 @@ export function RealisticScene() {
       <ambientLight intensity={FILL_INTENSITY} color={PALETTE.litFill} />
 
       <Suspense fallback={null}>
-        <StructureGlb />
         {/* Local file, never a CDN preset: the viewer must work air-gapped. */}
         <Environment
           files={HDRI_URL}
