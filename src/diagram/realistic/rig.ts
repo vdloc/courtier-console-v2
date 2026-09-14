@@ -64,3 +64,12 @@ export const METALNESS: Partial<Record<string, number>> = {
 
 /** Metres: the scale of a connection. */
 export const AO_RADIUS = 0.6;
+
+/** Engineering-mode edges draw only these — spike-measured, see docs/GLB-BOTH-MODES.md (a). */
+export const STRUCTURAL_TYPES = new Set([
+  'column',
+  'beam_x',
+  'beam_y',
+  'brace',
+  'foundation',
+]);

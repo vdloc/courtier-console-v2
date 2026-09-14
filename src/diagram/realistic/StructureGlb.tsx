@@ -5,6 +5,9 @@ import {
   AnimationMixer,
   type AnimationAction,
   type BufferGeometry,
+  EdgesGeometry,
+  LineBasicMaterial,
+  LineSegments,
   LoopOnce,
   Mesh,
   MeshBasicMaterial,
@@ -22,6 +25,7 @@ import {
   METALNESS,
   MODEL_BOUNDS,
   MODEL_URL,
+  STRUCTURAL_TYPES,
 } from './rig';
 import { useSectionPlanes } from '../useSectionPlanes';
 import { firstUnclippedHit, snapToFeature } from '../snapping';
@@ -55,6 +59,8 @@ interface GlbExtras {
 
 interface MemberRecord extends GlbMember {
   lod: number | undefined;
+  /** Structural types only (rig.ts STRUCTURAL_TYPES); visibility follows Engineering mode. */
+  edgeLine: LineSegments | null;
 }
 
 const FILTERED_SLOTS = [
@@ -157,10 +163,20 @@ export function StructureGlb() {
       object.frustumCulled = true;
 
       const type = (object.userData as GlbExtras).element_type;
+      let edgeLine: LineSegments | null = null;
+      if (type && STRUCTURAL_TYPES.has(type)) {
+        edgeLine = new LineSegments(
+          new EdgesGeometry(object.geometry, 15),
+          new LineBasicMaterial({ color: PALETTE.edge }),
+        );
+        edgeLine.visible = engineeringPreview;
+        object.add(edgeLine);
+      }
       records.push({
         mesh: object,
         home: object.position.clone(),
         lod: type ? LOD_DISTANCE[type] : undefined,
+        edgeLine,
       });
       for (const material of Array.isArray(object.material)
         ? object.material
@@ -224,6 +240,12 @@ export function StructureGlb() {
         record.mesh.visible = true;
       }
       for (const material of materials) material.clippingPlanes = [];
+      for (const record of records) {
+        if (!record.edgeLine) continue;
+        record.edgeLine.parent?.remove(record.edgeLine);
+        record.edgeLine.geometry.dispose();
+        (record.edgeLine.material as Material).dispose();
+      }
       disposeGlbMaterials();
       // No uncacheRoot: it took 1310 ms on this model, and the mixer is garbage once dropped.
       mixerRef.current?.stopAllAction();
