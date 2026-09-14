@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { ComponentInfo, LayerName, TreeNode } from './types';
-import { INITIAL_LAYERS, MOCK_TREE } from '../lib/mockData';
+import { INITIAL_LAYERS, PLACEHOLDER_TREE, PROJECT_NAME } from '../lib/mockData';
 import { buildGlbTree, type GlbTree } from '../diagram/realistic/glbTree';
 
 export interface ModelSlice {
@@ -11,9 +11,8 @@ export interface ModelSlice {
   hidden: Set<string>;
   selected: ComponentInfo | null;
   layers: Record<LayerName, boolean>;
-  /** Exported-model members by node name; kept apart from MOCK_COMPONENTS so neither shadows the other's ids. */
   glbComponents: Record<string, ComponentInfo>;
-  /** The explorer tree for realistic mode, built once the GLB's members are read. */
+  /** The explorer tree, built once the GLB's members are read; null is the loading state. */
   glb: GlbTree | null;
   registerComponents: (components: Record<string, ComponentInfo>) => void;
 
@@ -26,23 +25,16 @@ export interface ModelSlice {
   toggleLayer: (layer: LayerName) => void;
 }
 
-/** The tree the explorer shows: the GLB's once it has registered, a placeholder shape until then. */
+/** The tree the explorer shows: the GLB's once it has registered, an empty placeholder until then. */
 export function activeTree(s: { tree: TreeNode; glb: GlbTree | null }) {
   return s.glb ? s.glb.tree : s.tree;
-}
-
-/** Every component id in the tree, so "isolate" knows what to hide. */
-function allComponentIds(node: TreeNode, acc: string[] = []): string[] {
-  if (node.kind === 'component') acc.push(node.id);
-  node.children?.forEach((c) => allComponentIds(c, acc));
-  return acc;
 }
 
 export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
   set,
 ) => ({
-  projectName: MOCK_TREE.label,
-  tree: MOCK_TREE,
+  projectName: PROJECT_NAME,
+  tree: PLACEHOLDER_TREE,
   filter: '',
   collapsed: new Set<string>(['L02', 'L03']),
   hidden: new Set<string>(),
@@ -94,9 +86,7 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
   isolateSelected: () =>
     set((s) => {
       if (!s.selected) return {};
-      const ids = s.glbComponents[s.selected.id]
-        ? Object.keys(s.glbComponents)
-        : allComponentIds(s.tree);
+      const ids = Object.keys(s.glbComponents);
       return { hidden: new Set(ids.filter((id) => id !== s.selected!.id)) };
     }),
   showEverything: () => set({ hidden: new Set<string>() }),

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Plane, Vector3 } from 'three';
 import { useAppStore } from '../store/useAppStore';
-import type { Bounds } from './model';
+import type { Bounds } from './realistic/rig';
 import type { SectionAxis } from '../store/types';
 
 const AXIS_NORMAL: Record<SectionAxis, [number, number, number]> = {

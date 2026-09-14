@@ -1,19 +1,17 @@
-/**
- * Project-level stand-in content. The model itself is NOT here — it comes from
- * diagram/model.ts, which generates the parts, the component records and the
- * tree from one spec so the viewport and the explorer cannot disagree.
- */
-
-import type { LayerName, TimelinePhase, Viewpoint } from '../store/types';
+import type { LayerName, TimelinePhase, TreeNode, Viewpoint } from '../store/types';
 import { LAYERS } from '../store/types';
-import { COMPONENTS, buildTree } from '../diagram/model';
 
 export const PROJECT_NAME = 'Northgate Plant Extension';
 export const PROJECT_META = 'STEEL FRAME · 4 × 3 BAYS · G+3';
 export const REVISION = 'REV C · ISSUED FOR REVIEW';
 
-export const MOCK_TREE = buildTree(PROJECT_NAME);
-export const MOCK_COMPONENTS = COMPONENTS;
+/** Shown only until the GLB registers and activeTree() switches to its real tree. */
+export const PLACEHOLDER_TREE: TreeNode = {
+  id: 'project',
+  kind: 'project',
+  label: PROJECT_NAME,
+  children: [],
+};
 
 export const INITIAL_LAYERS: Record<LayerName, boolean> = LAYERS.reduce(
   (acc, l) => ({ ...acc, [l]: true }),

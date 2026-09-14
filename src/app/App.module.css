@@ -95,7 +95,9 @@
     visibility: hidden;
     /* Closing: slide out, THEN drop from the tab order — visibility switches
        after the transform finishes, so focus never parks off-screen mid-close. */
-    transition: transform 0.2s ease, visibility 0s linear 0.2s;
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
   }
 
   .right[data-open='true'] {
