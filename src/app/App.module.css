@@ -95,7 +95,9 @@
     visibility: hidden;
     /* Closing: slide out, THEN drop from the tab order — visibility switches
        after the transform finishes, so focus never parks off-screen mid-close. */
-    transition: transform 0.2s ease, visibility 0s linear 0.2s;
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
   }
 
   .right[data-open='true'] {
@@ -115,5 +117,37 @@
     margin: var(--s2) var(--s2) 0 auto;
     border-radius: var(--radius);
     background: var(--sunken);
+  }
+}
+
+/* Below 900px .left leaves the grid too — the model itself must stay reachable. */
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'top'
+      'view'
+      'bottom';
+  }
+
+  .left {
+    position: fixed;
+    top: var(--appbar-h);
+    left: 0;
+    bottom: var(--bottombar-h);
+    z-index: 20;
+    width: min(var(--panel-left-w), 88vw);
+    box-shadow: var(--shadow-modal);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
+  }
+
+  .left[data-open='true'] {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.2s ease;
   }
 }

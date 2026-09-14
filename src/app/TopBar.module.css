@@ -47,9 +47,20 @@
   background: var(--accent-hover);
 }
 
+/* Only meaningful once .left can leave the grid — see App.module.css's 900px rule. */
+.explorerToggle {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .meta,
   .rule {
     display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .explorerToggle {
+    display: inline-flex;
   }
 }

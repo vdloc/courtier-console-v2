@@ -22,17 +22,20 @@ export default function App() {
   const select = useAppStore((s) => s.select);
   const measuring = useAppStore((s) => s.measuring);
   const toggleMeasuring = useAppStore((s) => s.toggleMeasuring);
+  const explorerOpen = useAppStore((s) => s.explorerOpen);
+  const setExplorerOpen = useAppStore((s) => s.setExplorerOpen);
   const drawerOpen = Boolean(selected) || measuring;
 
   // Picking a measurement point IS clicking the canvas — a modal scrim would
   // eat every pick. Only block the canvas when the drawer is showing
   // properties alone; measuring always keeps it click-through beside itself.
-  const showScrim = drawerOpen && !measuring;
+  const showScrim = (drawerOpen && !measuring) || explorerOpen;
 
   const closeDrawer = useCallback(() => {
     select(null);
     if (measuring) toggleMeasuring();
-  }, [select, measuring, toggleMeasuring]);
+    if (explorerOpen) setExplorerOpen(false);
+  }, [select, measuring, toggleMeasuring, explorerOpen, setExplorerOpen]);
 
   // Escape now lives in the shortcut registry's cancel command — see interaction/commands.ts.
   useShortcuts();
@@ -45,7 +48,7 @@ export default function App() {
         <TopBar />
       </div>
 
-      <div className={styles.left}>
+      <div className={styles.left} data-open={explorerOpen ? 'true' : undefined}>
         <ObjectTree />
         <div className={styles.controls}>
           <Layers />

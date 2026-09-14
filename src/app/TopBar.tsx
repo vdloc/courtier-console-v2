@@ -8,6 +8,8 @@ import styles from './TopBar.module.css';
 export function TopBar() {
   const projectName = useAppStore((s) => s.projectName);
   const requestExport = useAppStore((s) => s.requestExport);
+  const explorerOpen = useAppStore((s) => s.explorerOpen);
+  const setExplorerOpen = useAppStore((s) => s.setExplorerOpen);
   const toggleHelp = useHelpStore((s) => s.toggle);
 
   return (
@@ -17,6 +19,14 @@ export function TopBar() {
       <span className={styles.rule} />
       <span className={styles.revision}>{REVISION}</span>
       <span className={styles.spacer} />
+      <IconButton
+        icon="cube"
+        tone="onDark"
+        label="Model explorer"
+        aria-expanded={explorerOpen}
+        className={styles.explorerToggle}
+        onClick={() => setExplorerOpen(!explorerOpen)}
+      />
       <IconButton
         icon="help"
         tone="onDark"

@@ -240,6 +240,10 @@ export const COMMANDS: Command[] = [
         return;
       }
       const s = store();
+      if (s.explorerOpen) {
+        s.setExplorerOpen(false);
+        return;
+      }
       const drawerOpen = Boolean(s.selected) || s.measuring;
       if (window.matchMedia(NARROW).matches && drawerOpen) {
         s.select(null);
