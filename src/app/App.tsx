@@ -34,16 +34,26 @@ export default function App() {
     if (measuring) toggleMeasuring();
   }, [select, measuring, toggleMeasuring]);
 
-  // Below 1280px .right is an overlay, not a column — Escape should only
-  // close it there, not change desktop selection behaviour.
+  // Below 1280px .right is an overlay — Escape closes it there. At any width,
+  // Escape while measuring does what the Measure button does. Never while
+  // typing: the tree filter keeps its native Escape behaviour.
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && window.matchMedia(NARROW).matches) closeDrawer();
+      if (e.key !== 'Escape') return;
+      const target = e.target as HTMLElement | null;
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) {
+        return;
+      }
+      if (window.matchMedia(NARROW).matches) {
+        closeDrawer();
+      } else if (measuring) {
+        toggleMeasuring();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [drawerOpen, closeDrawer]);
+  }, [drawerOpen, closeDrawer, measuring, toggleMeasuring]);
 
   if (GALLERY) return <Gallery />;
 
