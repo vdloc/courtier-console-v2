@@ -23,16 +23,25 @@ const STATUS_CLASS: Record<Status, string> = {
   Clash: styles.clash,
 };
 
+/** Mark (label) or grid ref (a component's own detail). Type and level aren't on the
+ * leaf itself — they're the label of the group node it sits under. */
+function matches(node: TreeNode, filter: string): boolean {
+  if (node.label.toLowerCase().includes(filter)) return true;
+  return Boolean(node.detail && node.detail.toLowerCase().includes(filter));
+}
+
 /** `filter` arrives lowercased. A non-empty filter opens every group, so a match inside a
- * collapsed level is never hidden by a flag the query can't see past. */
+ * collapsed level is never hidden by a flag the query can't see past. A group match (e.g.
+ * "Columns", "Level 01") includes its whole subtree, since type/level live only there. */
 function flatten(
   node: TreeNode,
   collapsed: Set<string>,
   filter: string,
   depth = 0,
   out: Row[] = [],
+  inherited = false,
 ): Row[] {
-  const match = !filter || node.label.toLowerCase().includes(filter);
+  const ownMatch = !filter || inherited || matches(node, filter);
   const children = node.children ?? [];
   const hasChildren = children.length > 0;
 
@@ -41,10 +50,10 @@ function flatten(
   const kept: Row[] = [];
   const open = !collapsed.has(node.id) || filter !== '';
   if (hasChildren && open) {
-    children.forEach((c) => flatten(c, collapsed, filter, depth + 1, kept));
+    children.forEach((c) => flatten(c, collapsed, filter, depth + 1, kept, ownMatch));
   }
 
-  if (match || kept.length > 0) {
+  if (ownMatch || kept.length > 0) {
     out.push({ node, depth, hasChildren, open });
     out.push(...kept);
   }
