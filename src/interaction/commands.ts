@@ -1,6 +1,7 @@
 import { useAppStore } from '../store/useAppStore';
 import type { CameraShot } from '../store/types';
 import { useHelpStore } from './helpStore';
+import { NARROW } from '../app/breakpoints';
 
 export type CommandCategory =
   'navigation' | 'visibility' | 'tools' | 'sequence' | 'general';
@@ -18,9 +19,6 @@ export interface Command {
 }
 
 const store = () => useAppStore.getState();
-
-// Below this width .right is an overlay; Escape's narrow-vs-desktop split matches App.tsx's own media query.
-const NARROW = '(max-width: 1280px)';
 
 const SHOTS: Array<{ key: string; shot: CameraShot; label: string }> = [
   { key: '1', shot: 'front', label: 'Front view' },
