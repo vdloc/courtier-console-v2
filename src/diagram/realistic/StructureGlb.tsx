@@ -353,6 +353,11 @@ export function StructureGlb() {
       object={scene}
       onClick={(event: ThreeEvent<MouseEvent>) => {
         event.stopPropagation();
+        // R3F's own click/miss threshold (see onPointerMissed): a drag that
+        // starts and ends over the model is not a pick. Without this, orbiting
+        // by dragging from a member silently reselects whatever the pointer
+        // lands on, with no indication selection changed.
+        if (event.delta > 2) return;
         const hit = firstUnclippedHit(event.intersections, planes);
         if (!hit) return;
         if (!measuring) {

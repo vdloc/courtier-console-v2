@@ -349,6 +349,10 @@ function Member({ part, planes }: { part: Part; planes: Plane[] }) {
       position={position}
       onClick={(e: ThreeEvent<MouseEvent>) => {
         e.stopPropagation();
+        // Same threshold R3F uses for onPointerMissed: a drag that starts and
+        // ends on this part is a camera orbit, not a pick — see StructureGlb's
+        // matching guard for why this matters.
+        if (e.delta > 2) return;
         if (measuring) {
           const hit = firstUnclippedHit(e.intersections, planes);
           if (!hit) return;
