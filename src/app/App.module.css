@@ -27,10 +27,12 @@
   background: var(--surface);
 }
 
-/* Two independent scroll regions: one scroller collapses the tree to a row. */
+/* Two independent scroll regions: one scroller collapses the tree to a row.
+   The floor keeps Layers/Display Mode/Tools reachable instead of being
+   crushed to a sliver while the tree above holds its own floor. */
 .controls {
   flex: 0 1 auto;
-  min-height: 0;
+  min-height: 120px;
   overflow-y: auto;
 }
 

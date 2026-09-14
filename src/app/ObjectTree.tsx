@@ -119,7 +119,7 @@ export function ObjectTree() {
     : rows.length;
 
   return (
-    <section className={`${panels.section} ${panels.grow}`}>
+    <section className={`${panels.section} ${panels.growTree}`}>
       <header className={panels.header}>
         <span className={panels.title}>Model explorer</span>
         <span className={panels.spacer} />
