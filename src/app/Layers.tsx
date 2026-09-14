@@ -4,9 +4,7 @@ import { PARTS } from '../diagram/model';
 import { useAppStore } from '../store/useAppStore';
 import styles from './panels.module.css';
 
-// Engineering only ever draws these — Connections/Accessories are GLB-only
-// layer groups with no procedural Part, so a checkbox for them there would
-// be a dead control. Derived from PARTS, not hardcoded, so it tracks the model.
+// Derived from PARTS, not hardcoded, so Engineering never lists a dead checkbox for a GLB-only layer.
 const ENGINEERING_LAYERS = LAYERS.filter((l) => PARTS.some((p) => p.layer === l));
 
 export function Layers() {
