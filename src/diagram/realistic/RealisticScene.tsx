@@ -108,11 +108,11 @@ export function RealisticScene() {
           backgroundIntensity={BACKGROUND_INTENSITY}
           environmentIntensity={ENVIRONMENT_INTENSITY}
         />
-        {quality === 'high' && (
+        {quality !== 'performance' && (
           <ContactShadows
             position={[SHADOW_CENTRE[0], GROUND_Y + 0.01, SHADOW_CENTRE[2]]}
             scale={90}
-            resolution={1024}
+            resolution={quality === 'high' ? 1024 : 512}
             far={20}
             blur={2.4}
             opacity={0.3}
@@ -121,6 +121,21 @@ export function RealisticScene() {
           />
         )}
       </Suspense>
+
+      {/* Catches the directional light's real shadow so the structure reads
+          as standing on something, not floating over the HDRI horizon.
+          shadowMaterial draws nothing outside a shadow, so it needs no
+          ground texture/token of its own -- tinted with the same colour
+          ContactShadows already uses for consistency between the two. */}
+      <mesh
+        position={[SHADOW_CENTRE[0], GROUND_Y, SHADOW_CENTRE[2]]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        castShadow={false}
+      >
+        <planeGeometry args={[200, 200]} />
+        <shadowMaterial color={PALETTE.litContact} opacity={0.35} />
+      </mesh>
 
       <Effects />
     </>
