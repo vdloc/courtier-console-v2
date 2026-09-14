@@ -21,6 +21,8 @@ const cache = new Map<string, MaterialPair>();
 /** Same three roles Member (DiagramScene.tsx) already draws; anything else defaults to solid. */
 function engineeringMaterialFor(elementType: string | undefined): MeshBasicMaterial {
   const role = elementType ? ROLE_BY_KIND[elementType] : undefined;
+  // Realistic's canvas runs ACES tone mapping; without this these colours
+  // shift away from the exact token values, misleading the preview.
   if (role === 'translucent') {
     return new MeshBasicMaterial({
       color: PALETTE.face,
@@ -28,12 +30,21 @@ function engineeringMaterialFor(elementType: string | undefined): MeshBasicMater
       opacity: 0.3,
       depthWrite: false,
       side: DoubleSide,
+      toneMapped: false,
     });
   }
   if (role === 'service') {
-    return new MeshBasicMaterial({ color: PALETTE.rebar, side: DoubleSide });
+    return new MeshBasicMaterial({
+      color: PALETTE.rebar,
+      side: DoubleSide,
+      toneMapped: false,
+    });
   }
-  return new MeshBasicMaterial({ color: PALETTE.solid, side: DoubleSide });
+  return new MeshBasicMaterial({
+    color: PALETTE.solid,
+    side: DoubleSide,
+    toneMapped: false,
+  });
 }
 
 /** Builds both variants once per mesh (keyed by uuid) and returns the cached pair thereafter. */
