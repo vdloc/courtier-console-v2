@@ -64,3 +64,21 @@
     display: inline-flex;
   }
 }
+
+/* Below ~420px .name/.revision wrapped to two lines inside the 34px bar and
+   clipped, and .export wrapped its label. Truncate the text, and stop the
+   button from shrinking below its label. */
+@media (max-width: 420px) {
+  .name,
+  .revision {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .export {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
