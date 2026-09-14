@@ -243,12 +243,15 @@ function CameraRig() {
     const camera = camRef.current;
     const controls = controlsRef.current;
     if (!camera || !controls || !pendingViewpointName) return;
+    // flyTo only queues an animation, so reading the live camera can capture
+    // the pre-move pose — save where it's heading instead.
+    const a = anim.current;
     commitViewpoint({
       id: crypto.randomUUID(),
       name: pendingViewpointName,
       mode,
-      position: camera.position.toArray() as [number, number, number],
-      target: controls.target.toArray() as [number, number, number],
+      position: (a ? a.endPos : camera.position).toArray() as [number, number, number],
+      target: (a ? a.endTarget : controls.target).toArray() as [number, number, number],
       saved: 'just now',
     });
     // Only the nonce should retrigger this — read current mode, not watch it.
