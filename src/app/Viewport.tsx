@@ -14,14 +14,29 @@ export function Viewport() {
   const hidden = useAppStore((s) => s.hidden);
   const layers = useAppStore((s) => s.layers);
   const progress = useAppStore((s) => s.progress);
+  const glbComponents = useAppStore((s) => s.glbComponents);
+
+  // Realistic draws the GLB, not PARTS — counting PARTS here would report a
+  // model that isn't on screen. Timeline/culling aren't tracked per GLB
+  // member, so they're left out rather than approximated.
+  const glbMembers = Object.values(glbComponents);
+  const glbDrawn = glbMembers.filter((c) => layers[c.layer] && !hidden.has(c.id)).length;
+  const glbHidden = glbMembers.filter((c) => hidden.has(c.id)).length;
 
   const shown = PARTS.filter((p) => isPartVisible(p, layers, hidden, progress)).length;
 
-  const stats: [string, string][] = [
-    ['Parts drawn', String(shown)],
-    ['Parts total', String(PARTS.length)],
-    ['Hidden', String(hidden.size)],
-  ];
+  const stats: [string, string][] =
+    mode === 'realistic'
+      ? [
+          ['GLB members drawn', String(glbDrawn)],
+          ['GLB members total', String(glbMembers.length)],
+          ['GLB members hidden', String(glbHidden)],
+        ]
+      : [
+          ['Parts drawn', String(shown)],
+          ['Parts total', String(PARTS.length)],
+          ['Hidden', String(hidden.size)],
+        ];
 
   return (
     <div className={styles.host}>
