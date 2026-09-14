@@ -353,7 +353,11 @@ export function StructureGlb() {
       lit.emissive.set(PALETTE.select);
       lit.emissiveIntensity = 0.6;
     } else if (lit instanceof MeshBasicMaterial) {
+      // Same rule as procedural Member: a selected part is always opaque, even a translucent one.
       lit.color.set(PALETTE.select);
+      lit.transparent = false;
+      lit.opacity = 1;
+      lit.depthWrite = true;
     } else {
       return;
     }
