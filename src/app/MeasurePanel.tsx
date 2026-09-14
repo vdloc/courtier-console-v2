@@ -4,6 +4,7 @@ import type { MeasureMode } from '../store/types';
 import { MODE_HINTS, MODE_POINTS } from '../store/measureSlice';
 import { evaluate, resolveMeasurePoint } from '../diagram/measurement';
 import { useAppStore } from '../store/useAppStore';
+import { shortcutFor } from '../interaction/commands';
 import panels from './panels.module.css';
 import styles from './MeasurePanel.module.css';
 
@@ -41,6 +42,8 @@ export function MeasurePanel() {
         <button
           type="button"
           className={panels.link}
+          title={`Undo (${shortcutFor('measure-undo')})`}
+          aria-keyshortcuts={shortcutFor('measure-undo')}
           onClick={undo}
           disabled={points.length === 0}
         >
@@ -49,6 +52,8 @@ export function MeasurePanel() {
         <button
           type="button"
           className={panels.link}
+          title={`Clear (${shortcutFor('measure-clear')})`}
+          aria-keyshortcuts={shortcutFor('measure-clear')}
           onClick={clear}
           disabled={points.length === 0}
         >
@@ -67,17 +72,27 @@ export function MeasurePanel() {
         </button>
 
         <div className={`${panels.buttonGrid} ${panels.cols3}`}>
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={panels.pick}
-              data-active={mode === m.id ? 'true' : undefined}
-              onClick={() => setMode(m.id)}
-            >
-              {m.label}
-            </button>
-          ))}
+          {MODES.map((m) => {
+            const shortcut =
+              m.id === 'distance'
+                ? shortcutFor('measure-distance')
+                : m.id === 'angle'
+                  ? shortcutFor('measure-angle')
+                  : undefined;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                className={panels.pick}
+                data-active={mode === m.id ? 'true' : undefined}
+                title={shortcut ? `${m.label} (${shortcut})` : m.label}
+                aria-keyshortcuts={shortcut}
+                onClick={() => setMode(m.id)}
+              >
+                {m.label}
+              </button>
+            );
+          })}
         </div>
 
         <p className={panels.hint}>{MODE_HINTS[mode]}</p>
