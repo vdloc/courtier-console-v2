@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Plane, Vector3 } from 'three';
 import { useAppStore } from '../store/useAppStore';
-import { BOUNDS, type Bounds } from './model';
+import type { Bounds } from './realistic/rig';
 import type { SectionAxis } from '../store/types';
 
 const AXIS_NORMAL: Record<SectionAxis, [number, number, number]> = {
@@ -15,7 +15,7 @@ const AXIS_INDEX: Record<SectionAxis, number> = { x: 0, y: 1, z: 2 };
  * Member materials only — clipping the renderer globally would also cut dimension leaders.
  * `bounds` is what the slider's 0..1 spans; each model passes its own.
  */
-export function useSectionPlanes(bounds: Bounds = BOUNDS): Plane[] {
+export function useSectionPlanes(bounds: Bounds): Plane[] {
   const enabled = useAppStore((s) => s.sectionEnabled);
   const axis = useAppStore((s) => s.sectionAxis);
   const position = useAppStore((s) => s.sectionPosition);

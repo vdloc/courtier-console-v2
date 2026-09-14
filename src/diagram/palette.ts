@@ -65,4 +65,6 @@ export const ROLE_BY_KIND: Record<string, DiagramRole> = {
   beam_x: 'translucent',
   beam_y: 'translucent',
   pipe: 'service',
+  // Wraps the pipe — solid grey would hide the service colour it insulates.
+  insulation: 'service',
 };

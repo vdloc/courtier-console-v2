@@ -32,10 +32,15 @@ export const SHADOW_FAR = 125;
 /** normalBias per metre of shadow texel (0.02 tuned at a 5.9 cm texel). */
 export const NORMAL_BIAS_PER_TEXEL = 0.341;
 
+export interface Bounds {
+  min: [number, number, number];
+  max: [number, number, number];
+}
+
 /** Extent of the built model, metres; the section slider and explode centre use it. */
-export const MODEL_BOUNDS = {
-  min: [-1.2, -0.74, -19.2] as [number, number, number],
-  max: [30, 14.72, 1.2] as [number, number, number],
+export const MODEL_BOUNDS: Bounds = {
+  min: [-1.2, -0.74, -19.2],
+  max: [30, 14.72, 1.2],
 };
 
 /** Cull distance by `element_type`, metres; ported from the demo's DetailCulling. */
@@ -64,3 +69,12 @@ export const METALNESS: Partial<Record<string, number>> = {
 
 /** Metres: the scale of a connection. */
 export const AO_RADIUS = 0.6;
+
+/** Engineering-mode edges draw only these — spike-measured, see docs/GLB-BOTH-MODES.md (a). */
+export const STRUCTURAL_TYPES = new Set([
+  'column',
+  'beam_x',
+  'beam_y',
+  'brace',
+  'foundation',
+]);

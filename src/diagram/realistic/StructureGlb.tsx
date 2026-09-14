@@ -5,8 +5,12 @@ import {
   AnimationMixer,
   type AnimationAction,
   type BufferGeometry,
+  EdgesGeometry,
+  LineBasicMaterial,
+  LineSegments,
   LoopOnce,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
   Vector2,
@@ -21,6 +25,7 @@ import {
   METALNESS,
   MODEL_BOUNDS,
   MODEL_URL,
+  STRUCTURAL_TYPES,
 } from './rig';
 import { useSectionPlanes } from '../useSectionPlanes';
 import { firstUnclippedHit, snapToFeature } from '../snapping';
@@ -30,6 +35,7 @@ import {
   registerGlbMembers,
   type GlbMember,
 } from './glbMembers';
+import { applyGlbMode, disposeGlbMaterials, materialsFor } from './glbMaterials';
 import { PALETTE } from '../palette';
 import { useAppStore } from '../../store/useAppStore';
 import { LAYERS, type ComponentInfo, type LayerName } from '../../store/types';
@@ -53,6 +59,8 @@ interface GlbExtras {
 
 interface MemberRecord extends GlbMember {
   lod: number | undefined;
+  /** Structural types only (rig.ts STRUCTURAL_TYPES); visibility follows Engineering mode. */
+  edgeLine: LineSegments | null;
 }
 
 const FILTERED_SLOTS = [
@@ -92,7 +100,7 @@ function componentFrom(object: Object3D, layer: LayerName): ComponentInfo | null
     section: extras.section ?? '',
     material_spec: extras.material_spec ?? '',
     length: longestDimension(extras.dimensions),
-    status: 'Installed',
+    // No construction-progress field in the export — unlike model.ts's status.
     layer,
     connected: (extras.connected_objects ?? '')
       .split(',')
@@ -112,7 +120,7 @@ export function layerOf(object: Object3D): LayerName | null {
   return null;
 }
 
-/** The exported structure, mounted in realistic mode only. */
+/** The exported structure — the one model both modes draw. */
 export function StructureGlb() {
   const { scene, animations } = useGLTF(MODEL_URL, DRACO_PATH);
   const gl = useThree((state) => state.gl);
@@ -125,6 +133,7 @@ export function StructureGlb() {
   const explodeFactor = useAppStore((s) => s.explodeFactor);
   const registerComponents = useAppStore((s) => s.registerComponents);
   const planes = useSectionPlanes(MODEL_BOUNDS);
+  const mode = useAppStore((s) => s.mode);
 
   const mixerRef = useRef<AnimationMixer | null>(null);
   const actionsRef = useRef<AnimationAction[]>([]);
@@ -141,6 +150,9 @@ export function StructureGlb() {
     const components: Record<string, ComponentInfo> = {};
     const records: MemberRecord[] = [];
     const materials = new Set<Material>();
+    // Both mode variants, so the clipping effect below reaches whichever one
+    // isn't currently assigned to the mesh too — see CHECKLIST §2.1.
+    const clipMaterials = new Set<Material>();
 
     scene.traverse((object) => {
       if (!(object instanceof Mesh)) return;
@@ -149,16 +161,31 @@ export function StructureGlb() {
       object.frustumCulled = true;
 
       const type = (object.userData as GlbExtras).element_type;
+      let edgeLine: LineSegments | null = null;
+      if (type && STRUCTURAL_TYPES.has(type)) {
+        edgeLine = new LineSegments(
+          new EdgesGeometry(object.geometry, 15),
+          new LineBasicMaterial({ color: PALETTE.edge }),
+        );
+        edgeLine.visible = mode === 'engineering';
+        object.add(edgeLine);
+      }
       records.push({
         mesh: object,
         home: object.position.clone(),
         lod: type ? LOD_DISTANCE[type] : undefined,
+        edgeLine,
       });
       for (const material of Array.isArray(object.material)
         ? object.material
         : [object.material]) {
         materials.add(material);
       }
+      // Read before the swap below, so `.realistic` is the true GLTF material.
+      const pair = materialsFor(object, type);
+      clipMaterials.add(pair.realistic);
+      clipMaterials.add(pair.engineering);
+      applyGlbMode(object, type, mode === 'engineering' ? 'engineering' : 'realistic');
 
       const layer = layerOf(object);
       if (!layer) return;
@@ -167,7 +194,7 @@ export function StructureGlb() {
     });
     recordsRef.current = records;
     registerGlbMembers(records);
-    materialsRef.current = [...materials];
+    materialsRef.current = [...clipMaterials];
 
     // Materials and textures belong to useGLTF's cache, so these writes must stay idempotent.
     const anisotropy = gl.capabilities.getMaxAnisotropy();
@@ -214,6 +241,13 @@ export function StructureGlb() {
         record.mesh.visible = true;
       }
       for (const material of materials) material.clippingPlanes = [];
+      for (const record of records) {
+        if (!record.edgeLine) continue;
+        record.edgeLine.parent?.remove(record.edgeLine);
+        record.edgeLine.geometry.dispose();
+        (record.edgeLine.material as Material).dispose();
+      }
+      disposeGlbMaterials();
       // No uncacheRoot: it took 1310 ms on this model, and the mixer is garbage once dropped.
       mixerRef.current?.stopAllAction();
       mixerRef.current = null;
@@ -224,6 +258,21 @@ export function StructureGlb() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, animations, duration, registerComponents, gl]);
+
+  // The mount effect above only sets the material/edges for the mode active
+  // at load; a later mode toggle needs its own pointer-swap pass.
+  useEffect(() => {
+    for (const record of recordsRef.current) {
+      const type = (record.mesh.userData as GlbExtras).element_type;
+      applyGlbMode(
+        record.mesh,
+        type,
+        mode === 'engineering' ? 'engineering' : 'realistic',
+      );
+      if (record.edgeLine) record.edgeLine.visible = mode === 'engineering';
+    }
+    gl.shadowMap.needsUpdate = true;
+  }, [mode, gl]);
 
   function applyExplode() {
     const store = useAppStore.getState();
@@ -325,19 +374,31 @@ export function StructureGlb() {
   }, [planes, gl, scene]);
 
   // Members share seven materials, so the selected one gets its own tinted clone.
+  // Declared after the mode-swap effect above, so it always clones whichever
+  // material that effect just assigned — never a stale one from the other mode.
   const selectedId = useAppStore((s) => s.selected?.id ?? null);
   const highlightRef = useRef<{
-    mesh: Mesh<BufferGeometry, MeshStandardMaterial>;
+    mesh: Mesh<BufferGeometry, Material>;
     original: Material;
   } | null>(null);
   useEffect(() => {
     const mesh = selectedId ? scene.getObjectByName(selectedId) : undefined;
-    if (!(mesh instanceof Mesh) || !(mesh.material instanceof MeshStandardMaterial))
-      return;
-    const original = mesh.material;
+    if (!(mesh instanceof Mesh)) return;
+    const original = mesh.material as Material;
     const lit = original.clone();
-    lit.emissive.set(PALETTE.select);
-    lit.emissiveIntensity = 0.6;
+    // PBR (Realistic) glows via emissive; flat (Engineering) has none, so it swaps colour instead.
+    if (lit instanceof MeshStandardMaterial) {
+      lit.emissive.set(PALETTE.select);
+      lit.emissiveIntensity = 0.6;
+    } else if (lit instanceof MeshBasicMaterial) {
+      // Same rule as procedural Member: a selected part is always opaque, even a translucent one.
+      lit.color.set(PALETTE.select);
+      lit.transparent = false;
+      lit.opacity = 1;
+      lit.depthWrite = true;
+    } else {
+      return;
+    }
     lit.clippingPlanes = original.clippingPlanes;
     mesh.material = lit;
     highlightRef.current = { mesh, original };
@@ -346,7 +407,9 @@ export function StructureGlb() {
       lit.dispose();
       highlightRef.current = null;
     };
-  }, [selectedId, scene]);
+    // mode: a mode toggle swaps mesh.material out from under this effect (see
+    // the mode-swap effect above, declared first so this always clones fresh).
+  }, [selectedId, scene, mode]);
 
   return (
     <primitive

@@ -1,6 +1,5 @@
 import { Chip } from '../ui/primitives';
 import { DiagramScene } from '../diagram/DiagramScene';
-import { PARTS, isPartVisible } from '../diagram/model';
 import { useAppStore } from '../store/useAppStore';
 import styles from './Viewport.module.css';
 
@@ -13,30 +12,20 @@ export function Viewport() {
   const exploded = useAppStore((s) => s.exploded);
   const hidden = useAppStore((s) => s.hidden);
   const layers = useAppStore((s) => s.layers);
-  const progress = useAppStore((s) => s.progress);
   const glbComponents = useAppStore((s) => s.glbComponents);
 
-  // Realistic draws the GLB, not PARTS — counting PARTS would report a model that isn't on screen.
+  // One model in both modes now, so one counting path for both.
   const glbMembers = Object.values(glbComponents);
   const glbDrawn = glbMembers.filter(
     (c) => layers[c.layer] && !hidden.has(c.id),
   ).length;
   const glbHidden = glbMembers.filter((c) => hidden.has(c.id)).length;
 
-  const shown = PARTS.filter((p) => isPartVisible(p, layers, hidden, progress)).length;
-
-  const stats: [string, string][] =
-    mode === 'realistic'
-      ? [
-          ['Members shown', String(glbDrawn)],
-          ['Members total', String(glbMembers.length)],
-          ['Members hidden', String(glbHidden)],
-        ]
-      : [
-          ['Parts drawn', String(shown)],
-          ['Parts total', String(PARTS.length)],
-          ['Hidden', String(hidden.size)],
-        ];
+  const stats: [string, string][] = [
+    ['Members shown', String(glbDrawn)],
+    ['Members total', String(glbMembers.length)],
+    ['Members hidden', String(glbHidden)],
+  ];
 
   return (
     <div className={styles.host}>

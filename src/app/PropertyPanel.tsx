@@ -56,7 +56,9 @@ export function PropertyPanel() {
               <span className={styles.category}>
                 {ELEMENT_LABELS[selected.element_type] ?? selected.element_type}
               </span>
-              <Chip tone={STATUS_TONE[selected.status]}>{selected.status}</Chip>
+              {selected.status && (
+                <Chip tone={STATUS_TONE[selected.status]}>{selected.status}</Chip>
+              )}
             </span>
           </div>
 

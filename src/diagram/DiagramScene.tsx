@@ -1,71 +1,28 @@
-import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Edges, OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { useEffect, useMemo, useRef } from 'react';
-import {
-  Box3,
-  DoubleSide,
-  PCFSoftShadowMap,
-  SRGBColorSpace,
-  Vector2,
-  Vector3,
-  type Plane,
-} from 'three';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { Suspense, useEffect, useRef } from 'react';
+import { Box3, PCFSoftShadowMap, SRGBColorSpace, Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { PerspectiveCamera as PerspectiveCameraImpl } from 'three';
-import {
-  BAY_X,
-  BAY_Y,
-  BOUNDS,
-  CENTRE,
-  PARTS,
-  PARTS_BY_ID,
-  STOREY,
-  explodedPosition,
-  isPartVisible,
-  type Bounds,
-  type Part,
-} from './model';
-import { PALETTE, ROLE_BY_KIND } from './palette';
+import { PALETTE } from './palette';
 import { Dimension } from './Dimension';
-import { useSectionPlanes } from './useSectionPlanes';
-import { firstUnclippedHit, snapToFeature } from './snapping';
 import { RealisticScene } from './realistic/RealisticScene';
-import { EXPOSURE, MODEL_BOUNDS, SHADOW_CENTRE } from './realistic/rig';
+import { StructureGlb } from './realistic/StructureGlb';
+import { EXPOSURE, MODEL_BOUNDS, SHADOW_CENTRE, type Bounds } from './realistic/rig';
 import { useAppStore } from '../store/useAppStore';
-import type { CameraShot, ViewMode } from '../store/types';
+import type { CameraShot } from '../store/types';
 import { PROJECT_NAME, REVISION } from '../lib/mockData';
 
+/** One model, one set of shots — every mode looks at the same GLB now. */
 const SHOT_POSITION: Record<CameraShot, [number, number, number]> = {
-  front: [2 * BAY_X, STOREY * 1.5, 64],
-  side: [66, STOREY * 1.5, 1.5 * BAY_Y],
-  iso: [44, 28, 44],
-  joint: [7, 5.5, 7],
-};
-
-/** The same shots around the exported model, which stands ~20 m from the procedural one. */
-const REALISTIC_SHOT_POSITION: Record<CameraShot, [number, number, number]> = {
   front: [SHADOW_CENTRE[0], SHADOW_CENTRE[1] + 4, SHADOW_CENTRE[2] + 58],
   side: [SHADOW_CENTRE[0] + 58, SHADOW_CENTRE[1] + 4, SHADOW_CENTRE[2]],
   iso: [SHADOW_CENTRE[0] + 34, SHADOW_CENTRE[1] + 22, SHADOW_CENTRE[2] + 38],
   joint: [SHADOW_CENTRE[0] + 8, SHADOW_CENTRE[1] - 1, SHADOW_CENTRE[2] + 9],
 };
 
-/** Everything the rig needs to frame one mode's model. */
-const FRAMING: Record<
-  ViewMode,
-  {
-    shots: Record<CameraShot, [number, number, number]>;
-    centre: [number, number, number];
-    bounds: Bounds;
-  }
-> = {
-  engineering: { shots: SHOT_POSITION, centre: CENTRE, bounds: BOUNDS },
-  realistic: {
-    shots: REALISTIC_SHOT_POSITION,
-    centre: SHADOW_CENTRE,
-    bounds: MODEL_BOUNDS,
-  },
-};
+const CENTRE = SHADOW_CENTRE;
+const BOUNDS: Bounds = MODEL_BOUNDS;
 
 function boxSphere(min: [number, number, number], max: [number, number, number]) {
   const center = new Vector3(
@@ -105,8 +62,6 @@ function CameraRig() {
   const camRef = useRef<PerspectiveCameraImpl>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const anim = useRef<CameraAnim | null>(null);
-  // Set when a viewpoint restore changes mode, so the mode reframe below doesn't override it.
-  const viewpointOwnsModeChange = useRef(false);
   const scene = useThree((s) => s.scene);
 
   const shot = useAppStore((s) => s.shot);
@@ -135,17 +90,15 @@ function CameraRig() {
     const camera = camRef.current;
     const controls = controlsRef.current;
     if (!camera || !controls || cameraRequestKind === null) return;
-    const framing = FRAMING[mode];
 
     if (cameraRequestKind === 'shot' || cameraRequestKind === 'reset') {
       // Shots set direction deliberately — no attempt to preserve the current angle.
-      flyTo(new Vector3(...framing.shots[shot]), new Vector3(...framing.centre));
+      flyTo(new Vector3(...SHOT_POSITION[shot]), new Vector3(...CENTRE));
       return;
     }
     if (cameraRequestKind === 'viewpoint') {
       const vp = viewpoints.find((v) => v.id === viewpointToRestore);
       if (!vp) return;
-      if (vp.mode !== mode) viewpointOwnsModeChange.current = true;
       flyTo(new Vector3(...vp.position), new Vector3(...vp.target));
       setMode(vp.mode);
       return;
@@ -153,21 +106,12 @@ function CameraRig() {
 
     let box: Bounds | null = null;
     if (cameraRequestKind === 'fit') {
-      box = framing.bounds;
-    } else if (mode === 'realistic') {
+      box = BOUNDS;
+    } else {
       const member = selected && scene.getObjectByName(selected.id);
       if (member) {
         const b = new Box3().setFromObject(member);
         box = { min: b.min.toArray(), max: b.max.toArray() };
-      }
-    } else {
-      const part = selected && PARTS_BY_ID[selected.id];
-      if (part) {
-        const half = part.size.map((v) => v / 2) as [number, number, number];
-        box = {
-          min: part.position.map((v, i) => v - half[i]) as [number, number, number],
-          max: part.position.map((v, i) => v + half[i]) as [number, number, number],
-        };
       }
     }
     if (!box) return;
@@ -189,22 +133,6 @@ function CameraRig() {
     // current value, not watched for change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraRequestNonce]);
-
-  // Each mode's model stands on different ground, so a mode switch re-frames the current shot.
-  const firstMode = useRef(true);
-  useEffect(() => {
-    if (firstMode.current) {
-      firstMode.current = false;
-      return;
-    }
-    if (viewpointOwnsModeChange.current) {
-      viewpointOwnsModeChange.current = false;
-      return;
-    }
-    const framing = FRAMING[mode];
-    flyTo(new Vector3(...framing.shots[shot]), new Vector3(...framing.centre));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
 
   useFrame(() => {
     const a = anim.current;
@@ -321,99 +249,12 @@ function ExportHandler() {
   return null;
 }
 
-function Member({ part, planes }: { part: Part; planes: Plane[] }) {
-  const select = useAppStore((s) => s.select);
-  const isSelected = useAppStore((s) => s.selected?.id === part.id);
-  const exploded = useAppStore((s) => s.exploded);
-  const explodeFactor = useAppStore((s) => s.explodeFactor);
-  const measuring = useAppStore((s) => s.measuring);
-  const addMeasurePoint = useAppStore((s) => s.addMeasurePoint);
-  const { camera, gl } = useThree();
-
-  const role = ROLE_BY_KIND[part.kind] ?? 'solid';
-  const position = exploded ? explodedPosition(part, explodeFactor) : part.position;
-
-  const colour = isSelected
-    ? PALETTE.select
-    : role === 'service'
-      ? PALETTE.rebar
-      : role === 'solid'
-        ? PALETTE.solid
-        : PALETTE.face;
-
-  // Translucent is the reference's default reading for structure; services
-  // stay opaque so they read as objects inside the glass.
-  const transparent = role === 'translucent' && !isSelected;
-  const clipped = planes.length > 0;
-
-  return (
-    <mesh
-      name={part.id}
-      position={position}
-      onClick={(e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation();
-        // A drag past R3F's click threshold is an orbit, not a pick.
-        if (e.delta > 2) return;
-        if (measuring) {
-          const hit = firstUnclippedHit(e.intersections, planes);
-          if (!hit) return;
-          const cursor = new Vector2(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-          const width = gl.domElement.clientWidth;
-          const height = gl.domElement.clientHeight;
-          const snap = snapToFeature(hit, camera, cursor, width, height, planes);
-          addMeasurePoint({
-            id: crypto.randomUUID(),
-            partId: snap.partId,
-            local: snap.local,
-            world: snap.world,
-            snap: snap.type,
-          });
-          return;
-        }
-        select(part.id);
-      }}
-    >
-      <boxGeometry args={part.size} />
-      <meshBasicMaterial
-        color={colour}
-        transparent={transparent}
-        opacity={transparent ? 0.3 : 1}
-        depthWrite={!transparent}
-        side={DoubleSide}
-        clippingPlanes={planes}
-      />
-      <Edges
-        threshold={15}
-        color={isSelected ? PALETTE.select : PALETTE.edge}
-        lineWidth={isSelected ? 2 : 1}
-        clippingPlanes={planes}
-        clipping={clipped}
-      />
-    </mesh>
-  );
-}
-
-function Model() {
-  const layers = useAppStore((s) => s.layers);
-  const hidden = useAppStore((s) => s.hidden);
-  const progress = useAppStore((s) => s.progress);
-  const planes = useSectionPlanes();
-
-  const visible = useMemo(
-    () => PARTS.filter((p) => isPartVisible(p, layers, hidden, progress)),
-    [layers, hidden, progress],
-  );
-
-  return (
-    <group>
-      {visible.map((p) => (
-        <Member key={p.id} part={p} planes={planes} />
-      ))}
-    </group>
-  );
-}
-
 /**
+ * DERIVED off the exported GLB (Steel_Column_Main_L00_A1/_A2/_B1,
+ * Concrete_Pad_Foundation_A1): grid bay X = 7.2 m (A1→A2 centres), grid bay Z
+ * = 6.0 m (A1→B1 centres), ground-storey column height = 4.0 m (base to
+ * top), pad footprint = 2.4 m. Re-measure if the GLB changes.
+ *
  * KaTeX source must reach the renderer with ONE backslash. A JSX string
  * attribute does not process escapes, so `label="\\Phi"` hands KaTeX a double
  * backslash — its line-break command — and the macro degrades to the word
@@ -424,25 +265,25 @@ function Annotations() {
     <group>
       <Dimension
         from={[0, 0, 0]}
-        to={[BAY_X, 0, 0]}
+        to={[7.2, 0, 0]}
         label={'A = 7.2'}
-        offset={[0, -1.4, -4.2]}
+        offset={[0, -1.4, 3]}
       />
       <Dimension
         from={[0, 0, 0]}
-        to={[0, 0, BAY_Y]}
-        label={'B = 7.2'}
-        offset={[-4.2, -1.4, 0]}
+        to={[0, 0, -6.0]}
+        label={'B = 6.0'}
+        offset={[-3, -1.4, 0]}
       />
       <Dimension
         from={[0, 0, 0]}
-        to={[0, STOREY, 0]}
-        label={'H_1 = 4.2'}
-        offset={[-4.2, 0, -4.2]}
+        to={[0, 4.0, 0]}
+        label={'H_1 = 4.0'}
+        offset={[-3, 0, 3]}
       />
       <Dimension
-        from={[-1.2, -0.7, -1.2]}
-        to={[1.2, -0.7, -1.2]}
+        from={[-1.2, -0.74, -1.2]}
+        to={[1.2, -0.74, -1.2]}
         label={'\\Phi_p = 2.4'}
         offset={[0, -2.6, 0]}
       />
@@ -478,7 +319,10 @@ export function DiagramScene() {
     >
       <CameraRig />
       <ExportHandler />
-      {realistic ? <RealisticScene /> : <Model />}
+      <Suspense fallback={null}>
+        <StructureGlb />
+      </Suspense>
+      {realistic && <RealisticScene />}
       {!realistic && <Annotations />}
     </Canvas>
   );
