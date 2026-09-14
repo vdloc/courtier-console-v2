@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { TopBar } from './TopBar';
 import { ObjectTree } from './ObjectTree';
 import { Layers } from './Layers';
@@ -10,12 +10,12 @@ import { Viewport } from './Viewport';
 import { Gallery } from '../gallery/Gallery';
 import { IconButton } from '../ui/primitives';
 import { useAppStore } from '../store/useAppStore';
+import { useShortcuts } from '../interaction/useShortcuts';
+import { ShortcutHelp } from '../interaction/ShortcutHelp';
 import styles from './App.module.css';
 
 /** `?gallery` shows the design system on its own, with no model content. */
 const GALLERY = new URLSearchParams(window.location.search).has('gallery');
-
-const NARROW = '(max-width: 1280px)';
 
 export default function App() {
   const selected = useAppStore((s) => s.selected);
@@ -34,28 +34,8 @@ export default function App() {
     if (measuring) toggleMeasuring();
   }, [select, measuring, toggleMeasuring]);
 
-  // Below 1280px Escape closes the overlay; wider, it stops Measure. Not while typing.
-  useEffect(() => {
-    if (!drawerOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-      if (window.matchMedia(NARROW).matches) {
-        closeDrawer();
-      } else if (measuring) {
-        toggleMeasuring();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [drawerOpen, closeDrawer, measuring, toggleMeasuring]);
+  // Escape now lives in the shortcut registry's cancel command — see interaction/commands.ts.
+  useShortcuts();
 
   if (GALLERY) return <Gallery />;
 
@@ -99,6 +79,8 @@ export default function App() {
       <div className={styles.bottom}>
         <Timeline />
       </div>
+
+      <ShortcutHelp />
     </div>
   );
 }

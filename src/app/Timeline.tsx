@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Slider } from '../ui/primitives';
 import { useAppStore } from '../store/useAppStore';
+import { shortcutFor } from '../interaction/commands';
 import panels from './panels.module.css';
 import styles from './Timeline.module.css';
 
@@ -50,6 +51,8 @@ export function Timeline() {
         <button
           type="button"
           className={panels.pick}
+          title={`${playback === 'playing' ? 'Pause' : 'Play'} (${shortcutFor('toggle-playback')})`}
+          aria-keyshortcuts={shortcutFor('toggle-playback')}
           onClick={playback === 'playing' ? pause : play}
         >
           {playback === 'playing' ? 'Pause' : 'Play'}

@@ -7,17 +7,25 @@ export interface ModalProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** False when a caller already owns Escape (e.g. the shortcut registry), so it isn't handled twice. */
+  closeOnEscape?: boolean;
 }
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  closeOnEscape = true,
+}: ModalProps) {
   useEffect(() => {
-    if (!open) return;
+    if (!open || !closeOnEscape) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, closeOnEscape, onClose]);
 
   if (!open) return null;
 

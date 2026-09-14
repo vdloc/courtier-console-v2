@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Icon, Input, Slider } from '../ui/primitives';
 import type { CameraShot, Quality, SectionAxis, ViewMode } from '../store/types';
 import { useAppStore } from '../store/useAppStore';
+import { shortcutFor } from '../interaction/commands';
 import styles from './panels.module.css';
 import local from './ViewControls.module.css';
 
@@ -80,6 +81,8 @@ export function ViewControls() {
                 type="button"
                 className={styles.pick}
                 data-active={shot === s.id ? 'true' : undefined}
+                title={`${s.label} (${shortcutFor(`view-${s.id}`)})`}
+                aria-keyshortcuts={shortcutFor(`view-${s.id}`)}
                 onClick={() => requestShot(s.id)}
               >
                 {s.label}
@@ -87,13 +90,21 @@ export function ViewControls() {
             ))}
           </div>
           <div className={`${styles.buttonGrid} ${styles.cols2}`}>
-            <button type="button" className={styles.pick} onClick={requestFitModel}>
+            <button
+              type="button"
+              className={styles.pick}
+              title={`Fit model (${shortcutFor('fit-model')})`}
+              aria-keyshortcuts={shortcutFor('fit-model')}
+              onClick={requestFitModel}
+            >
               Fit model
             </button>
             <button
               type="button"
               className={styles.pick}
               disabled={!selected}
+              title={`Focus selected (${shortcutFor('focus-selected')})`}
+              aria-keyshortcuts={shortcutFor('focus-selected')}
               onClick={requestFocusSelected}
             >
               Focus selected
@@ -102,6 +113,8 @@ export function ViewControls() {
               type="button"
               className={styles.pick}
               data-active={exploded ? 'true' : undefined}
+              title={`Explode (${shortcutFor('toggle-explode')})`}
+              aria-keyshortcuts={shortcutFor('toggle-explode')}
               onClick={toggleExplode}
             >
               Explode
@@ -114,7 +127,13 @@ export function ViewControls() {
             >
               Statistics
             </button>
-            <button type="button" className={styles.pick} onClick={requestReset}>
+            <button
+              type="button"
+              className={styles.pick}
+              title={`Reset view (${shortcutFor('reset-view')})`}
+              aria-keyshortcuts={shortcutFor('reset-view')}
+              onClick={requestReset}
+            >
               Reset view
             </button>
           </div>
@@ -183,7 +202,13 @@ export function ViewControls() {
           >
             Isolate
           </button>
-          <button type="button" className={styles.pick} onClick={showEverything}>
+          <button
+            type="button"
+            className={styles.pick}
+            title={`Show all (${shortcutFor('show-all')})`}
+            aria-keyshortcuts={shortcutFor('show-all')}
+            onClick={showEverything}
+          >
             Show all
           </button>
         </div>
@@ -204,6 +229,8 @@ export function ViewControls() {
             <Button
               size="sm"
               disabled={!vpName.trim()}
+              title={`Save (${shortcutFor('save-viewpoint')})`}
+              aria-keyshortcuts={shortcutFor('save-viewpoint')}
               onClick={() => {
                 requestSaveViewpoint(vpName.trim());
                 setVpName('');
@@ -239,7 +266,13 @@ export function ViewControls() {
         <header className={styles.header}>
           <span className={styles.title}>Section</span>
           <span className={styles.spacer} />
-          <button type="button" className={styles.link} onClick={toggleSection}>
+          <button
+            type="button"
+            className={styles.link}
+            title={`Section plane (${shortcutFor('toggle-section')})`}
+            aria-keyshortcuts={shortcutFor('toggle-section')}
+            onClick={toggleSection}
+          >
             {sectionEnabled ? 'Disable' : 'Enable'}
           </button>
         </header>
@@ -252,6 +285,8 @@ export function ViewControls() {
                 className={styles.pick}
                 data-active={sectionEnabled && sectionAxis === a ? 'true' : undefined}
                 disabled={!sectionEnabled}
+                title={`Section across ${a.toUpperCase()} (${shortcutFor(`section-axis-${a}`)})`}
+                aria-keyshortcuts={shortcutFor(`section-axis-${a}`)}
                 onClick={() => setSectionAxis(a)}
               >
                 {a.toUpperCase()}
@@ -262,6 +297,8 @@ export function ViewControls() {
               className={styles.pick}
               data-active={sectionFlipped ? 'true' : undefined}
               disabled={!sectionEnabled}
+              title={`Flip section (${shortcutFor('section-flip')})`}
+              aria-keyshortcuts={shortcutFor('section-flip')}
               onClick={toggleSectionFlip}
             >
               Flip
