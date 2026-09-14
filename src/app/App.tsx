@@ -34,15 +34,17 @@ export default function App() {
     if (measuring) toggleMeasuring();
   }, [select, measuring, toggleMeasuring]);
 
-  // Below 1280px .right is an overlay — Escape closes it there. At any width,
-  // Escape while measuring does what the Measure button does. Never while
-  // typing: the tree filter keeps its native Escape behaviour.
+  // Below 1280px Escape closes the overlay; wider, it stops Measure. Not while typing.
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       const target = e.target as HTMLElement | null;
-      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) {
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      ) {
         return;
       }
       if (window.matchMedia(NARROW).matches) {

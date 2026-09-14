@@ -1,6 +1,5 @@
 import type { StateCreator } from 'zustand';
 import type { ComponentInfo, LayerName, TreeNode, ViewMode } from './types';
-import { LAYERS } from './types';
 import { INITIAL_LAYERS, MOCK_COMPONENTS, MOCK_TREE } from '../lib/mockData';
 import { ANCESTORS } from '../diagram/model';
 import { buildGlbTree, type GlbTree } from '../diagram/realistic/glbTree';
@@ -26,7 +25,6 @@ export interface ModelSlice {
   isolateSelected: () => void;
   showEverything: () => void;
   toggleLayer: (layer: LayerName) => void;
-  setAllLayers: (on: boolean) => void;
 }
 
 /** The tree the explorer shows: the GLB's in realistic mode once loaded, the procedural one otherwise. */
@@ -105,11 +103,4 @@ export const createModelSlice: StateCreator<ModelSlice, [], [], ModelSlice> = (
   showEverything: () => set({ hidden: new Set<string>() }),
   toggleLayer: (layer) =>
     set((s) => ({ layers: { ...s.layers, [layer]: !s.layers[layer] } })),
-  setAllLayers: (on) =>
-    set({
-      layers: LAYERS.reduce(
-        (acc, l) => ({ ...acc, [l]: on }),
-        {} as Record<LayerName, boolean>,
-      ),
-    }),
 });
