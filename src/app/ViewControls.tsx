@@ -67,6 +67,11 @@ export function ViewControls() {
   const deleteViewpoint = useAppStore((s) => s.deleteViewpoint);
   const [vpName, setVpName] = useState('');
 
+  // Collapsed by default: Layers + View (+ Quality in Realistic) already push
+  // Tools below the fold, so the two least-reached-for sections start closed.
+  const [qualityOpen, setQualityOpen] = useState(false);
+  const [viewpointsOpen, setViewpointsOpen] = useState(false);
+
   return (
     <>
       <section className={styles.section}>
@@ -142,47 +147,6 @@ export function ViewControls() {
 
       <section className={styles.section}>
         <header className={styles.header}>
-          <span className={styles.title}>Display mode</span>
-        </header>
-        <div className={styles.body}>
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={local.mode}
-              data-active={mode === m.id ? 'true' : undefined}
-              onClick={() => setMode(m.id)}
-            >
-              <span className={local.modeLabel}>{m.label}</span>
-              <span className={local.modeHint}>{m.hint}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {realistic && (
-        <section className={styles.section}>
-          <header className={styles.header}>
-            <span className={styles.title}>Quality</span>
-          </header>
-          <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
-            {QUALITIES.map((q) => (
-              <button
-                key={q.id}
-                type="button"
-                className={styles.pick}
-                data-active={quality === q.id ? 'true' : undefined}
-                onClick={() => setQuality(q.id)}
-              >
-                {q.label}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className={styles.section}>
-        <header className={styles.header}>
           <span className={styles.title}>Tools</span>
         </header>
         <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
@@ -216,50 +180,115 @@ export function ViewControls() {
 
       <section className={styles.section}>
         <header className={styles.header}>
-          <span className={styles.title}>Viewpoints</span>
+          <span className={styles.title}>Display mode</span>
         </header>
-        <div className={`${styles.body} ${styles.stack}`}>
-          <div className={local.saveRow}>
-            <Input
-              placeholder="Name this view"
-              value={vpName}
-              onChange={(e) => setVpName(e.target.value)}
-              aria-label="Viewpoint name"
-            />
-            <Button
-              size="sm"
-              disabled={!vpName.trim()}
-              title={`Save (${shortcutFor('save-viewpoint')})`}
-              aria-keyshortcuts={shortcutFor('save-viewpoint')}
-              onClick={() => {
-                requestSaveViewpoint(vpName.trim());
-                setVpName('');
-              }}
+        <div className={styles.body}>
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={local.mode}
+              data-active={mode === m.id ? 'true' : undefined}
+              onClick={() => setMode(m.id)}
             >
-              Save
-            </Button>
-          </div>
-          {viewpoints.map((v) => (
-            <div key={v.id} className={local.viewpoint}>
-              <button
-                type="button"
-                className={local.vpRestore}
-                onClick={() => requestViewpoint(v.id)}
-              >
-                <span className={local.vpName}>{v.name}</span>
-                <span className={local.vpMeta}>{v.saved}</span>
-              </button>
-              <button
-                type="button"
-                className={local.vpDelete}
-                aria-label={`Delete ${v.name}`}
-                onClick={() => deleteViewpoint(v.id)}
-              >
-                <Icon name="close" size={12} />
-              </button>
-            </div>
+              <span className={local.modeLabel}>{m.label}</span>
+              <span className={local.modeHint}>{m.hint}</span>
+            </button>
           ))}
         </div>
+      </section>
+
+      {realistic && (
+        <section className={styles.section}>
+          <header className={styles.header}>
+            <span className={styles.title}>Quality</span>
+            <span className={styles.spacer} />
+            <span className={styles.count}>
+              {QUALITIES.find((q) => q.id === quality)?.label}
+            </span>
+            <button
+              type="button"
+              className={styles.link}
+              onClick={() => setQualityOpen(!qualityOpen)}
+            >
+              {qualityOpen ? 'Hide' : 'Show'}
+            </button>
+          </header>
+          {qualityOpen && (
+            <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
+              {QUALITIES.map((q) => (
+                <button
+                  key={q.id}
+                  type="button"
+                  className={styles.pick}
+                  data-active={quality === q.id ? 'true' : undefined}
+                  onClick={() => setQuality(q.id)}
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className={styles.section}>
+        <header className={styles.header}>
+          <span className={styles.title}>Viewpoints</span>
+          <span className={styles.spacer} />
+          <span className={styles.count}>{viewpoints.length}</span>
+          <button
+            type="button"
+            className={styles.link}
+            onClick={() => setViewpointsOpen(!viewpointsOpen)}
+          >
+            {viewpointsOpen ? 'Hide' : 'Show'}
+          </button>
+        </header>
+        {viewpointsOpen && (
+          <div className={`${styles.body} ${styles.stack}`}>
+            <div className={local.saveRow}>
+              <Input
+                placeholder="Name this view"
+                value={vpName}
+                onChange={(e) => setVpName(e.target.value)}
+                aria-label="Viewpoint name"
+              />
+              <Button
+                size="sm"
+                disabled={!vpName.trim()}
+                title={`Save (${shortcutFor('save-viewpoint')})`}
+                aria-keyshortcuts={shortcutFor('save-viewpoint')}
+                onClick={() => {
+                  requestSaveViewpoint(vpName.trim());
+                  setVpName('');
+                }}
+              >
+                Save
+              </Button>
+            </div>
+            {viewpoints.map((v) => (
+              <div key={v.id} className={local.viewpoint}>
+                <button
+                  type="button"
+                  className={local.vpRestore}
+                  onClick={() => requestViewpoint(v.id)}
+                >
+                  <span className={local.vpName}>{v.name}</span>
+                  <span className={local.vpMeta}>{v.saved}</span>
+                </button>
+                <button
+                  type="button"
+                  className={local.vpDelete}
+                  aria-label={`Delete ${v.name}`}
+                  onClick={() => deleteViewpoint(v.id)}
+                >
+                  <Icon name="close" size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className={styles.section}>
