@@ -7,6 +7,7 @@ import {
   type BufferGeometry,
   LoopOnce,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
   Vector2,
@@ -30,6 +31,7 @@ import {
   registerGlbMembers,
   type GlbMember,
 } from './glbMembers';
+import { applyGlbMode, disposeGlbMaterials } from './glbMaterials';
 import { PALETTE } from '../palette';
 import { useAppStore } from '../../store/useAppStore';
 import { LAYERS, type ComponentInfo, type LayerName } from '../../store/types';
@@ -126,6 +128,12 @@ export function StructureGlb() {
   const registerComponents = useAppStore((s) => s.registerComponents);
   const planes = useSectionPlanes(MODEL_BOUNDS);
 
+  // Temporary: previews the Engineering material set before the real mode
+  // cutover lands (docs/GLB-BOTH-MODES.md condition 4). Deleted with it.
+  const engineeringPreview =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('engineeringGlb');
+
   const mixerRef = useRef<AnimationMixer | null>(null);
   const actionsRef = useRef<AnimationAction[]>([]);
   const recordsRef = useRef<MemberRecord[]>([]);
@@ -159,6 +167,8 @@ export function StructureGlb() {
         : [object.material]) {
         materials.add(material);
       }
+      // Collected above from the Realistic material, before this swap.
+      applyGlbMode(object, type, engineeringPreview ? 'engineering' : 'realistic');
 
       const layer = layerOf(object);
       if (!layer) return;
@@ -214,6 +224,7 @@ export function StructureGlb() {
         record.mesh.visible = true;
       }
       for (const material of materials) material.clippingPlanes = [];
+      disposeGlbMaterials();
       // No uncacheRoot: it took 1310 ms on this model, and the mixer is garbage once dropped.
       mixerRef.current?.stopAllAction();
       mixerRef.current = null;
@@ -325,19 +336,27 @@ export function StructureGlb() {
   }, [planes, gl, scene]);
 
   // Members share seven materials, so the selected one gets its own tinted clone.
+  // Declared after the mode-swap effect above, so it always clones whichever
+  // material that effect just assigned — never a stale one from the other mode.
   const selectedId = useAppStore((s) => s.selected?.id ?? null);
   const highlightRef = useRef<{
-    mesh: Mesh<BufferGeometry, MeshStandardMaterial>;
+    mesh: Mesh<BufferGeometry, Material>;
     original: Material;
   } | null>(null);
   useEffect(() => {
     const mesh = selectedId ? scene.getObjectByName(selectedId) : undefined;
-    if (!(mesh instanceof Mesh) || !(mesh.material instanceof MeshStandardMaterial))
-      return;
-    const original = mesh.material;
+    if (!(mesh instanceof Mesh)) return;
+    const original = mesh.material as Material;
     const lit = original.clone();
-    lit.emissive.set(PALETTE.select);
-    lit.emissiveIntensity = 0.6;
+    // PBR (Realistic) glows via emissive; flat (Engineering) has none, so it swaps colour instead.
+    if (lit instanceof MeshStandardMaterial) {
+      lit.emissive.set(PALETTE.select);
+      lit.emissiveIntensity = 0.6;
+    } else if (lit instanceof MeshBasicMaterial) {
+      lit.color.set(PALETTE.select);
+    } else {
+      return;
+    }
     lit.clippingPlanes = original.clippingPlanes;
     mesh.material = lit;
     highlightRef.current = { mesh, original };
