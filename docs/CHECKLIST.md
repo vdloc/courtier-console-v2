@@ -34,7 +34,7 @@ Báo lại đã chạy cổng nào và nó in ra gì. "Chắc ổn" không phả
 - [ ] Không có type của renderer (`Object3D`, `Vector3`, `Plane`, …) ở bất kỳ đâu trong `src/store/`
 - [ ] Panel nhận zero prop, đọc store qua selector
 - [ ] Comment một tới hai dòng, chỉ ở chỗ code không tự nói được; lý do đi vào commit message
-- [ ] `src/diagram/realistic/StructureGlb.tsx` là nguồn duy nhất cho cả hai mode — Engineering không còn vẽ model sinh ra riêng; id trong viewport và Model Explorer đều đọc từ GLB nên không thể lệch nhau. `src/diagram/model.ts` còn tồn tại làm file nhưng không còn được tham chiếu ở runtime (xem commit "Engineering draws the GLB")
+- [x] `src/diagram/realistic/StructureGlb.tsx` là nguồn duy nhất cho cả hai mode — Engineering không còn vẽ model sinh ra riêng; id trong viewport và Model Explorer đều đọc từ GLB nên không thể lệch nhau. `src/diagram/model.ts` đã bị xoá hẳn (không còn tồn tại làm file) — xem §3
 
 ---
 
@@ -50,35 +50,32 @@ viewport. Một control không làm gì còn tệ hơn là không có. Đây là
 - Nghiệm thu: ảnh chụp ở ba vị trí slider trên cùng một trục cho ra ba lát cắt khác nhau; flip đảo nửa nào còn lại; tắt thì model trở lại nguyên vẹn. **Đã chạy — xem báo cáo trong commit message.**
 - Ngoài phạm vi: bịt mặt cắt (cap), gizmo mặt cắt trong scene.
 
-### 2.2 Đo đạc không pick được
+### 2.2 Đo đạc không pick được — ĐÃ XONG
 
-- Hiện trạng: `measureSlice` giữ điểm mock từ `mockData`. `MeasurePanel` liệt kê chúng. Không cú click nào trong viewport sinh ra điểm.
-- Phải: pick trong viewport thêm một điểm thật; loại snap và object id là thật; giá trị báo ra tính từ toạ độ đã pick.
-- Đang chờ: ngữ nghĩa snap (vertex / edge / face / centre) phải được quyết trước khi code. Không đoán.
-- Nghiệm thu: pick hai đỉnh có khoảng cách biết trước trong model sinh ra, và panel báo đúng khoảng cách đó.
+- Hiện trạng cũ (đã lỗi thời): `measureSlice` từng giữ điểm mock; không cú click nào sinh điểm thật.
+- Hiện tại: pick trong viewport (`StructureGlb.tsx`'s `onClick`, qua `snapToFeature` trong `snapping.ts`) thêm điểm thật; `partId` là tên member GLB thật, loại snap (vertex/midpoint/edge/face) tính từ hình học thật. `docs/FEATURES.md` mục E ghi lại kết quả bấm thật.
+- Ngoài phạm vi của mục này: `src/diagram/measurement.ts` và `src/diagram/snapping.ts` đang được implementor port lại (xem ghi chú ở đầu file này) — không đụng, không "sửa" claim ở đây thay việc đọc code thật.
 
-### 2.3 Nút Play của timeline không chạy
+### 2.3 Nút Play của timeline không chạy — ĐÃ XONG
 
-- Hiện trạng: `play()` set `playback: 'playing'` và không có gì đẩy `progress`. Nút đổi nhãn; model đứng im.
-- Phải: khi playing, `progress` chạy hết `duration` rồi dừng ở 1 với `playback: 'finished'`.
-- Nghiệm thu: bấm Play, ghi nhận các part hiện ra đúng thứ tự phase mà không đụng vào slider.
-- Lưu ý: vòng rAF thuộc về component, không thuộc slice — store không chứa timer.
+- `play()`/`tick()` trong `timelineSlice.ts` cùng vòng rAF ở `Timeline.tsx`'s `usePlaybackLoop` đẩy `progress` thật theo thời gian thực; dừng ở 1 với `playback: 'finished'`. Nghiệm thu ở `docs/FEATURES.md` mục G2.
+- rAF vẫn ở component (`Timeline.tsx`), không phải slice — đúng như thiết kế ban đầu.
 
-### 2.4 `quality` được ghi, không ai đọc
+### 2.4 `quality` được ghi, không ai đọc — ĐÃ XONG
 
-- Phải: hoặc điều khiển một thứ thật (giới hạn DPR, antialias, ngân sách draw), hoặc xoá khỏi `viewSlice` và `ViewControls`. Cả hai đều chấp nhận được; núm chết thì không.
+- Bốn chỗ đọc thật: kích thước shadow map (`RealisticScene.tsx`), bật/tắt N8AO (`Effects.tsx`), bật/tắt + độ phân giải `ContactShadows` (`RealisticScene.tsx`), và tỉ lệ khoảng cách LOD cull (`StructureGlb.tsx`'s `refreshVisibility`, qua `LOD_SCALE`).
 
-### 2.5 `hovered` được ghi, không ai đọc
+### 2.5 `hovered` được ghi, không ai đọc — ĐÃ XONG (đã xoá field)
 
-- Phải: hover một dòng trong cây thì part sáng lên, và hover part thì dòng sáng lên — hoặc bỏ luôn field. Cùng luật với trên.
+- `grep -rn hovered src` không còn ra dòng nào — field đã bị xoá khỏi store, không phải được nối vào một hành vi hover thật.
 
 ---
 
 ## 3. Dữ liệu phải nói thật
 
-- [ ] `status` của component phải có ý nghĩa — hiện chỉ trang trí cho dòng, không điều khiển gì
-- [ ] `connected[]` trong `PropertyPanel` đi tới được: click một id liên kết thì chọn đúng phần tử đó
-- [ ] Quyết và ghi lại: model tiếp tục được sinh ra, hay nạp từ GLB. Sinh ra hiện là điểm mạnh — id nhất quán do cấu tạo — và bản GLB không được làm mất điều đó.
+- [x] `status` — quyết định: bản GLB không có trường tiến độ thi công. `ComponentInfo.status` là optional (`Status | undefined`); mọi component đọc từ GLB đều `undefined`, không còn bịa `'Installed'` như bản cũ. `PropertyPanel` ẩn hẳn chip khi không có giá trị, thay vì hiện một trạng thái sai. Không phải "trang trí không điều khiển gì" nữa — là một trường thật, hiện đúng không có dữ liệu.
+- [x] `connected[]` trong `PropertyPanel` đi tới được: click một id liên kết thì chọn đúng phần tử đó — nghiệm lại ở `docs/FEATURES.md` mục F3, đọc từ `connected_objects` thật trong GLB.
+- [x] Quyết và ghi lại: **nạp từ GLB**, không sinh ra nữa. `src/diagram/model.ts` đã bị xoá (commit "refactor: delete the procedural model generator"). Id nhất quán không còn do cấu tạo của generator, mà do chỉ còn một nguồn duy nhất (`StructureGlb.tsx`) cho cả viewport lẫn Model Explorer — xem §1.
 
 ---
 
@@ -92,10 +89,10 @@ viewport. Một control không làm gì còn tệ hơn là không có. Đây là
 
 ## 5. Độ bền chưa ai hỏi tới
 
-- [ ] Không cuộn ngang ở 1280px. Dưới mức đó panel phải bị ẩn bởi media query; xác nhận không gãy thứ gì khác.
-- [ ] Bàn phím: mọi control tới được và dùng được không cần chuột; focus nhìn thấy ở mọi nơi.
+- [x] Không cuộn ngang ở 900px (`scrollWidth === clientWidth`, đo thật lần này). Model Explorer không chỉ "bị ẩn" ở màn hẹp — nó thành drawer bấm nút mở/đóng (`explorerOpen` trong `viewSlice`, nút "Model explorer" ở `TopBar`), nghiệm ở `docs/FEATURES.md`.
+- [x] Bàn phím: registry lệnh + phím tắt thật (`src/interaction/commands.ts`), overlay "Keyboard shortcuts" liệt kê đủ — bấm thật lần này, xem `docs/FEATURES.md`.
 - [ ] Trạng thái rỗng và cực đoan: tắt hết layer, ẩn hết, `progress` bằng 0, filter không khớp gì. Không cái nào được throw hay render panel trắng mà không giải thích.
-- [ ] Scene 175 part vẽ một `<mesh>` mỗi part. Đo chi phí frame trước khi cho là cần instancing — và đo lại trước khi tuyên bố instancing có tác dụng.
+- [ ] Scene giờ là 3362 member GLB, một `<mesh>` mỗi member (con số "175 part" là của generator thủ công đã xoá). Đã đo và sửa một phần: shadow pass giảm 612 → 228 draw call (-63%) bằng cách chỉ cho cấu kiện kết cấu chính đổ bóng (`STRUCTURAL_TYPES`, không đổi `receiveShadow`) — xem commit "perf: connection-level parts stop casting shadows". Beauty pass (vẽ màu) vẫn một draw call mỗi mesh, chưa đo lại xem có cần instancing/batching hay không — quyết định đó bị hoãn có chủ đích vì per-member identity (select/isolate/hide/explode/section/measure) đều khoá theo mesh riêng lẻ (registry `glbMembers.ts`), và một lần gộp mesh ẩu sẽ phá cả sáu hành vi đó.
 
 ---
 
