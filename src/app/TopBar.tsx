@@ -10,6 +10,8 @@ export function TopBar() {
   const requestExport = useAppStore((s) => s.requestExport);
   const explorerOpen = useAppStore((s) => s.explorerOpen);
   const setExplorerOpen = useAppStore((s) => s.setExplorerOpen);
+  const inspectForcedOpen = useAppStore((s) => s.inspectForcedOpen);
+  const setInspectForcedOpen = useAppStore((s) => s.setInspectForcedOpen);
   const togglePresent = useAppStore((s) => s.togglePresent);
   const toggleHelp = useHelpStore((s) => s.toggle);
 
@@ -27,6 +29,15 @@ export function TopBar() {
         aria-expanded={explorerOpen}
         className={styles.explorerToggle}
         onClick={() => setExplorerOpen(!explorerOpen)}
+      />
+      <IconButton
+        icon="ruler"
+        tone="onDark"
+        label="Inspect"
+        title="Open the Measure and Properties panel"
+        aria-expanded={inspectForcedOpen}
+        className={styles.inspectToggle}
+        onClick={() => setInspectForcedOpen(!inspectForcedOpen)}
       />
       <IconButton
         icon="eye"

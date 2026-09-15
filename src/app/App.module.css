@@ -142,6 +142,30 @@
   }
 }
 
+/* Short viewports (laptop with devtools open, a windowed browser): .growTree
+   and .controls each hold a 120px floor (panels.module.css, above) and each
+   scroll independently. At normal heights that's fine, but below this
+   threshold .controls's own content (Layers + View + Tools) is taller than
+   either floor leaves room for, and its *own* auto-scroll region ends up
+   squeezed so hard that Tools sits below the fold with no obvious way to
+   reach it — a nested scrollbar inside an already-short column.
+   Fix: pin the tree to a small, still-internally-scrollable window instead
+   of letting it fight .controls for space, let .controls lay out at its
+   full natural height (no independent scroll of its own), and make .left
+   the one column that scrolls — Tools becomes reachable by scrolling the
+   same bar that reveals the rest of the panel, not a second hidden one. */
+@media (max-height: 700px) {
+  .left {
+    overflow-y: auto;
+  }
+
+  .controls {
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow-y: visible;
+  }
+}
+
 /* Below 900px .left leaves the grid too — the model itself must stay reachable. */
 @media (max-width: 900px) {
   .app {

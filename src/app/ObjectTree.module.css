@@ -112,3 +112,17 @@
   background: var(--border-soft);
   color: var(--text);
 }
+
+/* Below this width the app assumes touch (drawer breakpoints in
+   App.module.css) — WCAG 2.5.8's 24x24 minimum applies. The icon glyph
+   stays 13px; only the button box and its grid cell grow. */
+@media (max-width: 1200px) {
+  .row {
+    grid-template-columns: 14px minmax(0, 1fr) auto 20px 24px;
+  }
+
+  .iconToggle {
+    width: 24px;
+    height: 24px;
+  }
+}

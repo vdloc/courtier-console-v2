@@ -36,7 +36,10 @@
   padding: 0 var(--s3);
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--accent);
+  /* White text on the brand --accent is 3.97:1, below AA's 4.5:1 at this
+     size — --accent-text is the same darker orange already used for hover
+     states elsewhere, verified 5.1:1 with white text. */
+  background: var(--accent-text);
   color: var(--text-on-dark);
   font-size: var(--fs-label);
   font-weight: var(--weight-medium);
@@ -44,7 +47,7 @@
 }
 
 .export:hover {
-  background: var(--accent-hover);
+  background: var(--accent-text-strong);
 }
 
 /* Only meaningful once .left can leave the grid — see App.module.css's 900px rule. */
@@ -52,10 +55,24 @@
   display: none;
 }
 
+/* Mirrors .explorerToggle for the right drawer, which leaves the grid at
+   1200px (App.module.css) — its only other open triggers are implicit
+   (selecting a member, or arming Measure), so below that width there was no
+   way to just open Properties. */
+.inspectToggle {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .meta,
   .rule {
     display: none;
+  }
+}
+
+@media (max-width: 1200px) {
+  .inspectToggle {
+    display: inline-flex;
   }
 }
 

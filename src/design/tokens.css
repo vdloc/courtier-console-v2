@@ -15,6 +15,14 @@
   --primary-hover: #1665d0;
   --accent: #da5515;
   --accent-hover: #bf4711;
+  /* On-light text/icon use only, at sizes too small for --primary/--accent's
+     own fill-and-border contrast to carry — 4.5:1 AA verified against white,
+     --primary-wash and --sunken (the surfaces these actually sit on). Never
+     use these for fills, borders, or large text: --primary/--accent already
+     meet contrast there, and darkening those too would flatten the brand. */
+  --primary-text: #0a4a8f;
+  --accent-text: #bf4711;
+  --accent-text-strong: #a8420d;
   --surface: #f9fafa;
   --ink: #252b2e;
 

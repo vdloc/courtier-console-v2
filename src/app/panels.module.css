@@ -24,6 +24,17 @@
   min-height: 120px;
 }
 
+/* Below App.module.css's max-height:700px threshold, .controls stops
+   competing with the tree for space and lays out at full height instead —
+   see that file for why. Pinning the tree to a fixed, still-scrollable
+   window here (rather than flex:1 fighting for whatever's left) keeps it
+   from being squeezed to a sliver by that change. */
+@media (max-height: 700px) {
+  .growTree {
+    flex: 0 0 140px;
+  }
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -50,7 +61,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: var(--fs-label);
   cursor: pointer;
 }
@@ -63,6 +74,17 @@
   color: var(--text-faint);
   cursor: not-allowed;
   text-decoration: none;
+}
+
+/* Below this width the app assumes touch (drawer breakpoints in
+   App.module.css) — WCAG 2.5.8's 24x24 minimum applies. .link paints no
+   background at rest, so padding grows the hit area with nothing to show
+   for it; the negative margin cancels the layout shift. */
+@media (max-width: 1200px) {
+  .link {
+    padding: var(--s2) var(--s1);
+    margin: calc(-1 * var(--s2)) calc(-1 * var(--s1));
+  }
 }
 
 .body {
@@ -129,7 +151,7 @@
 .pick[data-active='true'] {
   border-color: var(--primary);
   background: var(--primary-wash);
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: var(--weight-medium);
 }
 

@@ -18,6 +18,12 @@ export interface ViewSlice {
   showStats: boolean;
   /** The left panel, below the COMPACT breakpoint where it leaves the grid. */
   explorerOpen: boolean;
+  /**
+   * Forces the right drawer open with no selection and no measurement armed —
+   * its only other open triggers. Without this a tablet/touch user has no
+   * way to open Properties/Measure except by picking a model member first.
+   */
+  inspectForcedOpen: boolean;
   /** Client-presentation mode: docked panels hidden, viewport + viewpoint stepper only. */
   presenting: boolean;
 
@@ -56,6 +62,7 @@ export interface ViewSlice {
   requestFocusSelected: () => void;
   requestViewpoint: (id: string) => void;
   setLastClickPoint: (p: [number, number, number]) => void;
+  setInspectForcedOpen: (open: boolean) => void;
   requestRecenterPivot: () => void;
   requestUprightView: () => void;
   requestExport: () => void;
@@ -81,6 +88,7 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
   explodeFactor: 0.35,
   showStats: false,
   explorerOpen: false,
+  inspectForcedOpen: false,
   presenting: false,
 
   sectionEnabled: false,
@@ -128,6 +136,7 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
       cameraRequestNonce: s.cameraRequestNonce + 1,
     })),
   setLastClickPoint: (lastClickPoint) => set({ lastClickPoint }),
+  setInspectForcedOpen: (inspectForcedOpen) => set({ inspectForcedOpen }),
   requestRecenterPivot: () =>
     set((s) => ({
       cameraRequestKind: 'recenter',

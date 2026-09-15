@@ -25,8 +25,10 @@ export default function App() {
   const toggleMeasuring = useAppStore((s) => s.toggleMeasuring);
   const explorerOpen = useAppStore((s) => s.explorerOpen);
   const setExplorerOpen = useAppStore((s) => s.setExplorerOpen);
+  const inspectForcedOpen = useAppStore((s) => s.inspectForcedOpen);
+  const setInspectForcedOpen = useAppStore((s) => s.setInspectForcedOpen);
   const presenting = useAppStore((s) => s.presenting);
-  const drawerOpen = Boolean(selected) || measuring;
+  const drawerOpen = Boolean(selected) || measuring || inspectForcedOpen;
 
   // Picking a measurement point IS clicking the canvas — a modal scrim would
   // eat every pick. Only block the canvas when the drawer is showing
@@ -37,7 +39,16 @@ export default function App() {
     select(null);
     if (measuring) toggleMeasuring();
     if (explorerOpen) setExplorerOpen(false);
-  }, [select, measuring, toggleMeasuring, explorerOpen, setExplorerOpen]);
+    if (inspectForcedOpen) setInspectForcedOpen(false);
+  }, [
+    select,
+    measuring,
+    toggleMeasuring,
+    explorerOpen,
+    setExplorerOpen,
+    inspectForcedOpen,
+    setInspectForcedOpen,
+  ]);
 
   // Escape now lives in the shortcut registry's cancel command — see interaction/commands.ts.
   useShortcuts();

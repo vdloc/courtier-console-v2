@@ -34,7 +34,7 @@
 }
 
 .phaseName {
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: var(--fs-small);
 }
 
@@ -62,5 +62,16 @@
 
 .mark[data-active='true'] {
   border-left-color: var(--primary);
-  color: var(--primary);
+  color: var(--primary-text);
+}
+
+/* Below this width the five labels overlap into an unreadable run-on
+   ("FOUNDATIONCOLUMNS…") — the track shrinks but the labels don't. The
+   active phase name is already shown redundantly in .phaseName above the
+   track, so dropping to tick-marks-only here loses nothing. */
+@media (max-width: 600px) {
+  .mark {
+    padding-left: 0;
+    font-size: 0;
+  }
 }
