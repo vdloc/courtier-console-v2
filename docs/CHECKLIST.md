@@ -93,6 +93,7 @@ viewport. Một control không làm gì còn tệ hơn là không có. Đây là
 - [x] Bàn phím: registry lệnh + phím tắt thật (`src/interaction/commands.ts`), overlay "Keyboard shortcuts" liệt kê đủ — bấm thật lần này, xem `docs/FEATURES.md`.
 - [ ] Trạng thái rỗng và cực đoan: tắt hết layer, ẩn hết, `progress` bằng 0, filter không khớp gì. Không cái nào được throw hay render panel trắng mà không giải thích.
 - [ ] Scene giờ là 3362 member GLB, một `<mesh>` mỗi member (con số "175 part" là của generator thủ công đã xoá). Đã đo và sửa một phần: shadow pass giảm 612 → 228 draw call (-63%) bằng cách chỉ cho cấu kiện kết cấu chính đổ bóng (`STRUCTURAL_TYPES`, không đổi `receiveShadow`) — xem commit "perf: connection-level parts stop casting shadows". Beauty pass (vẽ màu) vẫn một draw call mỗi mesh, chưa đo lại xem có cần instancing/batching hay không — quyết định đó bị hoãn có chủ đích vì per-member identity (select/isolate/hide/explode/section/measure) đều khoá theo mesh riêng lẻ (registry `glbMembers.ts`), và một lần gộp mesh ẩu sẽ phá cả sáu hành vi đó.
+- [x] `<Canvas>` không còn vẽ liên tục 60fps cho scene đứng yên — `frameloop="demand"` (`src/diagram/DiagramScene.tsx`), cộng `StoreInvalidator` subscribe nguyên store gọi `invalidate()` trên mọi thay đổi (rẻ hơn dò từng field, và đúng bẫy đã cảnh báo ở `docs/FEATURES-TODO.md` P1.2: quên invalidate thì đứng hình). Tween camera tự invalidate mỗi bước; `OrbitControls` của drei tự invalidate khi đổi. Nghiệm ở `vite preview`, không đứng hình, không lỗi console.
 
 ---
 

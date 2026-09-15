@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { GizmoHelper, GizmoViewport, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Suspense, useEffect, useRef } from 'react';
 import { Box3, PCFSoftShadowMap, SRGBColorSpace, Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -64,6 +64,7 @@ function CameraRig() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const anim = useRef<CameraAnim | null>(null);
   const scene = useThree((s) => s.scene);
+  const invalidate = useThree((s) => s.invalidate);
 
   const shot = useAppStore((s) => s.shot);
   const cameraRequestKind = useAppStore((s) => s.cameraRequestKind);
@@ -73,6 +74,7 @@ function CameraRig() {
   const viewpoints = useAppStore((s) => s.viewpoints);
   const setMode = useAppStore((s) => s.setMode);
   const mode = useAppStore((s) => s.mode);
+  const lastClickPoint = useAppStore((s) => s.lastClickPoint);
 
   function flyTo(endPos: Vector3, endTarget: Vector3) {
     const camera = camRef.current;
@@ -102,6 +104,25 @@ function CameraRig() {
       if (!vp) return;
       flyTo(new Vector3(...vp.position), new Vector3(...vp.target));
       setMode(vp.mode);
+      return;
+    }
+    if (cameraRequestKind === 'recenter') {
+      // Pivot moves to the last clicked point; the camera itself doesn't
+      // travel, so only the target end of the tween actually moves.
+      if (!lastClickPoint) return;
+      flyTo(camera.position.clone(), new Vector3(...lastClickPoint));
+      return;
+    }
+    if (cameraRequestKind === 'upright') {
+      // Keep the current look direction (yaw) and distance, but level the
+      // pitch — camera ends up at the same height as its target.
+      const target = controls.target.clone();
+      const offset = camera.position.clone().sub(target);
+      const distance = offset.length();
+      const horizontal = new Vector3(offset.x, 0, offset.z);
+      if (horizontal.lengthSq() < 1e-6) horizontal.set(1, 0, 0);
+      horizontal.normalize();
+      flyTo(target.clone().addScaledVector(horizontal, distance), target);
       return;
     }
 
@@ -140,6 +161,10 @@ function CameraRig() {
     const camera = camRef.current;
     const controls = controlsRef.current;
     if (!a || !camera || !controls) return;
+
+    // Under frameloop="demand" a single invalidate() only buys one frame —
+    // keep requesting the next one for as long as the tween is still running.
+    invalidate();
 
     const elapsed = performance.now() - a.startTime;
 
@@ -206,6 +231,20 @@ function CameraRig() {
       />
     </>
   );
+}
+
+/**
+ * `frameloop="demand"` only repaints when told to. Rather than track every
+ * store field that can affect the scene (selection, hover snap, section
+ * plane, explode factor, layer visibility, ...) and risk missing one — the
+ * documented trap — subscribe to the whole store and invalidate on any
+ * change. Over-invalidating costs an occasional spare frame; under-
+ * invalidating freezes the viewport.
+ */
+function StoreInvalidator() {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => useAppStore.subscribe(() => invalidate()), [invalidate]);
+  return null;
 }
 
 function sanitizeForFilename(s: string): string {
@@ -298,6 +337,7 @@ export function DiagramScene() {
 
   return (
     <Canvas
+      frameloop="demand"
       dpr={[1, 2]}
       shadows={realistic ? { type: PCFSoftShadowMap } : false}
       // No renderer tone mapping: realistic mode applies AgX in its composer (realistic/Effects.tsx).
@@ -320,6 +360,10 @@ export function DiagramScene() {
     >
       <CameraRig />
       <ExportHandler />
+      <StoreInvalidator />
+      <GizmoHelper alignment="bottom-right" margin={[64, 64]}>
+        <GizmoViewport />
+      </GizmoHelper>
       <Suspense fallback={null}>
         <StructureGlb />
       </Suspense>

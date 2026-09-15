@@ -41,6 +41,12 @@ export interface ViewSlice {
   cameraRequestKind: CameraRequestKind | null;
   cameraRequestNonce: number;
   exportRequestNonce: number;
+  /**
+   * World-space point of the most recent click on the model, in plain
+   * [x,y,z] form — never a Vector3 (see the store's renderer-type ban).
+   * Feeds the 'recenter' camera request (the `T` shortcut).
+   */
+  lastClickPoint: [number, number, number] | null;
 
   setMode: (mode: ViewMode) => void;
   setQuality: (quality: Quality) => void;
@@ -49,6 +55,9 @@ export interface ViewSlice {
   requestFitModel: () => void;
   requestFocusSelected: () => void;
   requestViewpoint: (id: string) => void;
+  setLastClickPoint: (p: [number, number, number]) => void;
+  requestRecenterPivot: () => void;
+  requestUprightView: () => void;
   requestExport: () => void;
   toggleExplode: () => void;
   setExplodeFactor: (v: number) => void;
@@ -87,6 +96,7 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
   cameraRequestKind: null,
   cameraRequestNonce: 0,
   exportRequestNonce: 0,
+  lastClickPoint: null,
 
   setMode: (mode) => set({ mode }),
   setQuality: (quality) => set({ quality }),
@@ -115,6 +125,17 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
     set((s) => ({
       viewpointToRestore: id,
       cameraRequestKind: 'viewpoint',
+      cameraRequestNonce: s.cameraRequestNonce + 1,
+    })),
+  setLastClickPoint: (lastClickPoint) => set({ lastClickPoint }),
+  requestRecenterPivot: () =>
+    set((s) => ({
+      cameraRequestKind: 'recenter',
+      cameraRequestNonce: s.cameraRequestNonce + 1,
+    })),
+  requestUprightView: () =>
+    set((s) => ({
+      cameraRequestKind: 'upright',
       cameraRequestNonce: s.cameraRequestNonce + 1,
     })),
   requestExport: () => set((s) => ({ exportRequestNonce: s.exportRequestNonce + 1 })),

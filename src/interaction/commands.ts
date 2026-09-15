@@ -53,6 +53,23 @@ export const COMMANDS: Command[] = [
     hint: 'Return to the default view',
     run: () => store().requestReset(),
   },
+  {
+    id: 'recenter-pivot',
+    label: 'Recenter pivot',
+    category: 'navigation',
+    shortcut: 'T',
+    hint: 'Orbit around the last clicked point instead of the model centre',
+    enabled: () => store().lastClickPoint !== null,
+    run: () => store().requestRecenterPivot(),
+  },
+  {
+    id: 'upright-view',
+    label: 'Upright view',
+    category: 'navigation',
+    shortcut: 'Y',
+    hint: 'Level the camera without changing which way it faces',
+    run: () => store().requestUprightView(),
+  },
   ...SHOTS.map(({ key, shot, label }): Command => ({
     id: `view-${shot}`,
     label,

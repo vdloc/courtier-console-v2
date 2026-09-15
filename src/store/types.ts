@@ -17,7 +17,14 @@ export type LayerName = (typeof LAYERS)[number];
 export type Discipline = 'STR' | 'ARC' | 'MEP' | 'TMP';
 export type ViewMode = 'realistic' | 'engineering';
 export type CameraShot = 'front' | 'side' | 'iso' | 'joint';
-export type CameraRequestKind = 'shot' | 'reset' | 'fit' | 'focus' | 'viewpoint';
+export type CameraRequestKind =
+  | 'shot'
+  | 'reset'
+  | 'fit'
+  | 'focus'
+  | 'viewpoint'
+  | 'recenter'
+  | 'upright';
 /** Realistic-mode fidelity tier; flat mode ignores it. */
 export type Quality = 'high' | 'balanced' | 'performance';
 export type SectionAxis = 'x' | 'y' | 'z';

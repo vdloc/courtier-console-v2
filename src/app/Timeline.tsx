@@ -6,10 +6,11 @@ import panels from './panels.module.css';
 import styles from './Timeline.module.css';
 
 /**
- * Outside the Canvas on purpose — a plain rAF loop rather than `useFrame`, so
- * the sequence clock keeps running under `frameloop="demand"` if on-demand
- * rendering lands later. That does mean `tick()` alone won't repaint the
- * scene under demand mode; that day, this loop also needs to call `invalidate()`.
+ * Outside the Canvas on purpose — a plain rAF loop rather than `useFrame`,
+ * since this clock has to keep running under `frameloop="demand"`. Each
+ * `tick()` writes `progress` to the store, and `DiagramScene`'s
+ * `StoreInvalidator` calls `invalidate()` on every store change — so the
+ * scene repaints once per tick without this loop needing to know about R3F.
  */
 function usePlaybackLoop(playback: string) {
   useEffect(() => {

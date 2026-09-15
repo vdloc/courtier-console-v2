@@ -45,7 +45,17 @@ Việc phải làm:
 Nghiệm thu: xoay chuột lung tung → `Reset view` đưa hash canvas về đúng baseline.
 Chọn một part → `Focus selected` → part đó chiếm phần lớn khung, không bị cắt.
 
-## P1.2 — Render theo yêu cầu
+## P1.2 — Render theo yêu cầu — ĐÃ XONG
+
+`<Canvas frameloop="demand">` ở `src/diagram/DiagramScene.tsx`. Thay vì dò từng
+field store có thể đổi scene (bẫy đã cảnh báo ở dưới), `StoreInvalidator` (cùng
+file) subscribe nguyên store và gọi `invalidate()` trên mọi thay đổi — over-
+invalidate một frame thừa còn hơn thiếu một frame và đứng hình. Tween camera
+(`CameraRig`'s `useFrame`) tự gọi `invalidate()` mỗi bước để giữ animation
+chạy qua nhiều frame. `OrbitControls` của drei tự invalidate khi đổi (built-in,
+không cần code thêm). Nghiệm thu: `vite preview` — scene render đúng, đổi
+progress/section/explode/select đều cập nhật, không đứng hình; không cần đo
+FPS vì không có API `renderer.info` đếm số frame thực tế đã vẽ ở đây.
 
 Họ tự viết `RafHelper` + cờ `renderEnabled`: mọi tương tác gọi `enableRender()`,
 1000ms sau không có gì thì ngừng gọi `renderer.render()`.
@@ -117,7 +127,13 @@ không cần spatial index.
 
 Vẫn chờ anh quyết trước khi giao việc.
 
-## P2.3 — Trục toạ độ góc màn hình
+## P2.3 — Trục toạ độ góc màn hình — ĐÃ XONG
+
+Lấy bản drei như đề xuất: `<GizmoHelper><GizmoViewport /></GizmoHelper>` ở
+`src/diagram/DiagramScene.tsx`, góc dưới-phải. Bấm được — nó tự tween camera
+qua context nội bộ của `GizmoHelper` (đọc `state.controls`, tức
+`OrbitControls` có `makeDefault`), không cần code nối thêm. Nghiệm thu: bấm
+mặt X/Y/Z trên gizmo → camera quay tới mặt đó.
 
 `CoordinateAxesViewport.ts`: một `WebGLRenderer` thứ hai nhỏ xíu +
 `OrthographicCamera` riêng, mỗi frame đồng bộ **hướng** (không đồng bộ vị trí)
@@ -129,13 +145,27 @@ cube vào TODO và chưa làm.
 Với R3F thì rẻ hơn nhiều: `<GizmoHelper>` + `<GizmoViewport>` của drei, và bản
 drei **bấm được** để nhảy về mặt chuẩn. Lấy luôn bản drei, tốt hơn bản gốc.
 
-## P2.4 — Phím tắt
+## P2.4 — Phím tắt — ĐÃ XONG (F đã có từ P1.1; T và Y mới)
 
-Của họ, đáng lấy ba phím: `F` bay tới cái đang chọn, `T` đặt lại tâm xoay vào
-điểm vừa bấm, `Y` dựng thẳng hướng nhìn theo trục đứng. `T` đặc biệt hữu ích —
-xoay quanh chỗ đang nhìn thay vì quanh tâm model.
+`T` — `recenter-pivot` trong `src/interaction/commands.ts`: đặt lại tâm xoay
+vào điểm click cuối cùng trong viewport. Điểm đó giờ được ghi lại bất kể đang
+đo hay không — `StructureGlb.tsx`'s `onClick` gọi `setLastClickPoint(hit.point)`
+trước khi rẽ nhánh measuring/select. Store field mới `lastClickPoint` là tuple
+`[number, number, number]`, không phải `Vector3` — đúng bất biến §1 của
+CHECKLIST. `CameraRig` xử lý request kiểu `'recenter'`: camera đứng yên, chỉ
+target tween tới điểm đó.
 
-Phụ thuộc P1.1 (đã có toán fit thì `F` gần như miễn phí).
+`Y` — `upright-view`: giữ khoảng cách và góc nhìn ngang (yaw) hiện tại, chỉ
+loại bỏ độ nghiêng (pitch) — camera kết thúc ở cùng độ cao với target. Khác
+với `bim-viewer`, ta không có khái niệm "roll" để dựng thẳng (OrbitControls
+khoá `up` cố định nên không lệch), nên phần việc thật của `Y` là san bằng góc
+nhìn dọc, không phải chỉnh roll.
+
+Nghiệm thu (đã bấm thật qua Playwright, đọc trực tiếp `camera.position` /
+`controls.target`): `T` → `controls.target` bằng đúng điểm vừa click, vị trí
+camera không đổi. `Y` sau đó → `camera.position.y` bằng đúng `controls.target.y`
+(san bằng), khoảng cách tới target giữ nguyên. Không lỗi console ở dev
+(`localhost:5175`) và ở `vite preview` (`localhost:4173`).
 
 ---
 

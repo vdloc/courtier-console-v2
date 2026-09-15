@@ -127,6 +127,7 @@ export function StructureGlb() {
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
   const select = useAppStore((s) => s.select);
+  const setLastClickPoint = useAppStore((s) => s.setLastClickPoint);
   const measuring = useAppStore((s) => s.measuring);
   const addMeasurePoint = useAppStore((s) => s.addMeasurePoint);
   const setHoverSnap = useAppStore((s) => s.setHoverSnap);
@@ -426,6 +427,7 @@ export function StructureGlb() {
         if (event.delta > 2) return;
         const hit = firstUnclippedHit(event.intersections, planes, measuring);
         if (!hit) return;
+        setLastClickPoint(hit.point.toArray() as [number, number, number]);
         if (!measuring) {
           select(hit.object.name);
           return;
