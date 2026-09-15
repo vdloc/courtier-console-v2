@@ -57,7 +57,7 @@ export function Timeline() {
         >
           {playback === 'playing' ? 'Pause' : 'Play'}
         </button>
-        <button type="button" className={panels.pick} onClick={reset}>
+        <button type="button" className={panels.pick} title="Reset" onClick={reset}>
           Reset
         </button>
         <span className={styles.phaseName}>{active?.name}</span>

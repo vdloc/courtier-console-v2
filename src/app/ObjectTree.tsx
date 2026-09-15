@@ -3,6 +3,7 @@ import { Icon, Input } from '../ui/primitives';
 import type { Status, TreeNode } from '../store/types';
 import { useAppStore } from '../store/useAppStore';
 import { activeTree } from '../store/modelSlice';
+import { shortcutFor } from '../interaction/commands';
 import panels from './panels.module.css';
 import styles from './ObjectTree.module.css';
 
@@ -133,13 +134,20 @@ export function ObjectTree() {
         <span className={panels.title}>Model explorer</span>
         <span className={panels.spacer} />
         {hidden.size > 0 ? (
-          <button type="button" className={panels.link} onClick={showEverything}>
+          <button
+            type="button"
+            className={panels.link}
+            title={`Show all (${shortcutFor('show-all')})`}
+            aria-keyshortcuts={shortcutFor('show-all')}
+            onClick={showEverything}
+          >
             Show all
           </button>
         ) : (
           <button
             type="button"
             className={panels.link}
+            title="Isolate"
             onClick={isolateSelected}
             disabled={!selected}
           >

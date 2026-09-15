@@ -128,6 +128,7 @@ export function ViewControls() {
               type="button"
               className={styles.pick}
               data-active={showStats ? 'true' : undefined}
+              title="Statistics"
               onClick={toggleStats}
             >
               Statistics
@@ -154,6 +155,8 @@ export function ViewControls() {
             type="button"
             className={styles.pick}
             data-active={measuring ? 'true' : undefined}
+            title={`Measure (${shortcutFor('measure-distance')})`}
+            aria-keyshortcuts={shortcutFor('measure-distance')}
             onClick={toggleMeasuring}
           >
             Measure
@@ -161,6 +164,7 @@ export function ViewControls() {
           <button
             type="button"
             className={styles.pick}
+            title="Isolate"
             onClick={isolateSelected}
             disabled={!selected}
           >
