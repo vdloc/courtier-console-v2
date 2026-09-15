@@ -156,11 +156,13 @@ export function StructureGlb() {
 
     scene.traverse((object) => {
       if (!(object instanceof Mesh)) return;
-      object.castShadow = true;
+      const type = (object.userData as GlbExtras).element_type;
+      // Connection-level parts (bolts, welds, stiffeners, end/splice plates)
+      // are too small to cast a visible shadow but are most of the mesh
+      // count (2744 of 3362) -- halving the shadow pass for free.
+      object.castShadow = !!type && STRUCTURAL_TYPES.has(type);
       object.receiveShadow = true;
       object.frustumCulled = true;
-
-      const type = (object.userData as GlbExtras).element_type;
       let edgeLine: LineSegments | null = null;
       if (type && STRUCTURAL_TYPES.has(type)) {
         edgeLine = new LineSegments(
