@@ -1,0 +1,12 @@
+.chip {
+  padding: 2px 6px;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  background: var(--canvas);
+  color: var(--warn);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}

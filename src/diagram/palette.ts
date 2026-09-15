@@ -22,6 +22,7 @@ const TOKENS = [
   '--lit-fog',
   '--lit-contact',
   '--lit-occlusion',
+  '--warn',
 ] as const;
 
 type Token = (typeof TOKENS)[number];
@@ -54,6 +55,8 @@ export const PALETTE = {
   litFog: t['--lit-fog'],
   litContact: t['--lit-contact'],
   litOcclusion: t['--lit-occlusion'],
+  /** The measure tool's hover snap — amber against selection blue, deliberately: a proposal, not a state. */
+  warn: t['--warn'],
 };
 
 export type DiagramRole = 'translucent' | 'solid' | 'service';

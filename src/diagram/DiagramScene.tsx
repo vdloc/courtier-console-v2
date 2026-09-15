@@ -8,6 +8,7 @@ import { PALETTE } from './palette';
 import { Dimension } from './Dimension';
 import { RealisticScene } from './realistic/RealisticScene';
 import { StructureGlb } from './realistic/StructureGlb';
+import { MeasureOverlay } from './MeasureOverlay';
 import { EXPOSURE, MODEL_BOUNDS, SHADOW_CENTRE, type Bounds } from './realistic/rig';
 import { useAppStore } from '../store/useAppStore';
 import type { CameraShot } from '../store/types';
@@ -322,6 +323,7 @@ export function DiagramScene() {
       <Suspense fallback={null}>
         <StructureGlb />
       </Suspense>
+      <MeasureOverlay />
       {realistic && <RealisticScene />}
       {!realistic && <Annotations />}
     </Canvas>

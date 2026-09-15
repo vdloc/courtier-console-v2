@@ -29,6 +29,8 @@ export interface SnapResult {
   local: [number, number, number];
   type: SnapType;
   partId: string;
+  /** Both ends of the snapped edge, world space — drawn as the hover highlight. */
+  edge?: [[number, number, number], [number, number, number]];
 }
 
 /** Pixels. ~10 is about a fingertip at 1080p. */
@@ -120,6 +122,11 @@ function passesClip(point: Vector3, planes: Plane[]): boolean {
   return planes.every((pl) => pl.distanceToPoint(point) >= 0);
 }
 
+/** Bolts and welds: 63% of the scene by count, almost none of it by interest.
+ * Near a joint the nearest surface is nearly always a bolt head, so without
+ * this a measurement snaps bolt-to-bolt while the user aims beam-to-column. */
+const FASTENERS = new Set(['bolt', 'weld']);
+
 /**
  * First intersection whose point the active section has not cut away, nearest
  * to farthest. R3F's raycaster does not consult clippingPlanes, so a click on
@@ -129,13 +136,21 @@ function passesClip(point: Vector3, planes: Plane[]): boolean {
  * dimension annotations are raycastable and sit exactly on member surfaces, so
  * near a corner they can report a nearer, unnamed hit than the member itself.
  * The raycaster ignores `visible` too, so hidden and culled members are skipped.
+ *
+ * `excludeFasteners` only applies to measuring — selection still needs to pick
+ * a bolt or weld, so it defaults to off and the measure tool opts in.
  */
 export function firstUnclippedHit(
   intersections: Intersection[],
   planes: Plane[],
+  excludeFasteners = false,
 ): Intersection | null {
   for (const hit of intersections) {
     if (!memberByName(hit.object.name)) continue;
+    if (excludeFasteners) {
+      const type = hit.object.userData.element_type as string | undefined;
+      if (type && FASTENERS.has(type)) continue;
+    }
     if (isRendered(hit.object) && passesClip(hit.point, planes)) return hit;
   }
   return null;
@@ -222,6 +237,10 @@ export function snapToFeature(
       local: local.toArray() as [number, number, number],
       type: 'midpoint',
       partId: object.name,
+      edge: [
+        worldCorners[i].toArray() as [number, number, number],
+        worldCorners[j].toArray() as [number, number, number],
+      ],
     };
   }
 
@@ -244,12 +263,17 @@ export function snapToFeature(
     }
   }
   if (bestEdge >= 0) {
+    const [i, j] = BOX_EDGES[bestEdge];
     const inverse = object.matrixWorld.clone().invert();
     return {
       world: chosen.toArray() as [number, number, number],
       local: chosen.clone().applyMatrix4(inverse).toArray() as [number, number, number],
       type: 'edge',
       partId: object.name,
+      edge: [
+        worldCorners[i].toArray() as [number, number, number],
+        worldCorners[j].toArray() as [number, number, number],
+      ],
     };
   }
 

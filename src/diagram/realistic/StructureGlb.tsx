@@ -129,6 +129,7 @@ export function StructureGlb() {
   const select = useAppStore((s) => s.select);
   const measuring = useAppStore((s) => s.measuring);
   const addMeasurePoint = useAppStore((s) => s.addMeasurePoint);
+  const setHoverSnap = useAppStore((s) => s.setHoverSnap);
   const layers = useAppStore((s) => s.layers);
   const exploded = useAppStore((s) => s.exploded);
   const explodeFactor = useAppStore((s) => s.explodeFactor);
@@ -423,7 +424,7 @@ export function StructureGlb() {
         event.stopPropagation();
         // A drag past R3F's click threshold is an orbit, not a pick.
         if (event.delta > 2) return;
-        const hit = firstUnclippedHit(event.intersections, planes);
+        const hit = firstUnclippedHit(event.intersections, planes, measuring);
         if (!hit) return;
         if (!measuring) {
           select(hit.object.name);
@@ -449,6 +450,32 @@ export function StructureGlb() {
           world: snap.world,
           snap: snap.type,
         });
+      }}
+      onPointerMove={(event: ThreeEvent<PointerEvent>) => {
+        if (!measuring) return;
+        event.stopPropagation();
+        const hit = firstUnclippedHit(event.intersections, planes, true);
+        if (!hit) {
+          setHoverSnap(null);
+          return;
+        }
+        const cursor = new Vector2(
+          event.nativeEvent.offsetX,
+          event.nativeEvent.offsetY,
+        );
+        const { clientWidth, clientHeight } = gl.domElement;
+        const snap = snapToFeature(
+          hit,
+          camera,
+          cursor,
+          clientWidth,
+          clientHeight,
+          planes,
+        );
+        setHoverSnap({ world: snap.world, type: snap.type, edge: snap.edge });
+      }}
+      onPointerOut={() => {
+        if (measuring) setHoverSnap(null);
       }}
     />
   );

@@ -17,16 +17,26 @@ export const MODE_HINTS: Record<MeasureMode, string> = {
   area: 'Pick three or more coplanar points.',
 };
 
+/** What the cursor is over right now, while measuring — a proposal, not a commit. */
+export interface HoverSnap {
+  world: [number, number, number];
+  type: 'vertex' | 'midpoint' | 'edge' | 'face';
+  /** Both ends of the snapped edge, world space, when the snap is an edge or midpoint. */
+  edge?: [[number, number, number], [number, number, number]];
+}
+
 export interface MeasureSlice {
   measuring: boolean;
   measureMode: MeasureMode;
   measurePoints: MeasurePoint[];
+  hoverSnap: HoverSnap | null;
 
   toggleMeasuring: () => void;
   setMeasureMode: (mode: MeasureMode) => void;
   addMeasurePoint: (point: MeasurePoint) => void;
   undoMeasurePoint: () => void;
   clearMeasurement: () => void;
+  setHoverSnap: (snap: HoverSnap | null) => void;
 }
 
 export const createMeasureSlice: StateCreator<MeasureSlice, [], [], MeasureSlice> = (
@@ -35,11 +45,17 @@ export const createMeasureSlice: StateCreator<MeasureSlice, [], [], MeasureSlice
   measuring: false,
   measureMode: 'distance',
   measurePoints: [],
+  hoverSnap: null,
 
-  toggleMeasuring: () => set((s) => ({ measuring: !s.measuring })),
+  toggleMeasuring: () =>
+    set((s) => ({
+      measuring: !s.measuring,
+      hoverSnap: s.measuring ? null : s.hoverSnap,
+    })),
   setMeasureMode: (measureMode) => set({ measureMode, measurePoints: [] }),
   addMeasurePoint: (point) =>
     set((s) => ({ measurePoints: [...s.measurePoints, point] })),
   undoMeasurePoint: () => set((s) => ({ measurePoints: s.measurePoints.slice(0, -1) })),
   clearMeasurement: () => set({ measurePoints: [] }),
+  setHoverSnap: (hoverSnap) => set({ hoverSnap }),
 });
