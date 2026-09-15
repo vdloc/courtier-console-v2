@@ -74,8 +74,10 @@
   grid-template-areas: 'view';
 }
 
-/* Below 1280px .right leaves the grid and becomes a dismissible overlay —
-   selecting a part must never be a dead end just because the column is gone. */
+/* Below 1200px .right leaves the grid and becomes a dismissible overlay —
+   selecting a part must never be a dead end just because the column is gone.
+   1200, not 1280: 1280 is a common laptop width and max-width is inclusive,
+   so 1280 used to scrim the canvas the user just clicked to select. */
 .scrim {
   display: none;
 }
@@ -84,7 +86,7 @@
   display: none;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1200px) {
   .app {
     grid-template-columns: var(--panel-left-w) minmax(0, 1fr);
     grid-template-areas:
