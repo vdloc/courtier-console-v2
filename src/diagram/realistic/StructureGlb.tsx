@@ -75,6 +75,12 @@ const FILTERED_SLOTS = [
 /** Seconds between culling passes; per-frame distance checks would cost more than they save. */
 const CULL_INTERVAL = 0.16;
 
+const EXPLODE_MS = 450;
+
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
 const scratchCentre = new Vector3();
 
 /** "0.033 x 18.500 x 0.033" → 18.5 */
@@ -144,6 +150,9 @@ export function StructureGlb() {
   const recordsRef = useRef<MemberRecord[]>([]);
   const materialsRef = useRef<Material[]>([]);
   const cullClock = useRef(0);
+  const invalidate = useThree((state) => state.invalidate);
+  const explodeAnim = useRef<{ from: number; to: number; start: number } | null>(null);
+  const explodeCurrent = useRef(0);
 
   const duration = useMemo(
     () => (animations.length ? Math.max(...animations.map((c) => c.duration)) : 0),
@@ -281,9 +290,7 @@ export function StructureGlb() {
     gl.shadowMap.needsUpdate = true;
   }, [mode, gl]);
 
-  function applyExplode() {
-    const store = useAppStore.getState();
-    const factor = store.exploded ? store.explodeFactor : 0;
+  function applyExplodeFactor(factor: number) {
     for (const { mesh, home } of recordsRef.current) {
       explodedPosition(home, factor, mesh.position);
     }
@@ -302,15 +309,33 @@ export function StructureGlb() {
     }
     mixer.setTime(time);
     for (const { mesh, home } of records) home.copy(mesh.position);
-    applyExplode();
+    applyExplodeFactor(explodeCurrent.current);
     gl.shadowMap.needsUpdate = true;
   }
 
+  // Toggling Explode tweens between the current and target factor over
+  // EXPLODE_MS (see the useFrame below) — the button used to snap the whole
+  // assembly apart/together in one frame. Dragging explodeFactor while
+  // already exploded stays instant on purpose: a slider mid-drag reacting
+  // with a further delay would feel laggy, not smooth.
   useEffect(() => {
-    applyExplode();
-    gl.shadowMap.needsUpdate = true;
+    explodeAnim.current = {
+      from: explodeCurrent.current,
+      to: exploded ? explodeFactor : 0,
+      start: performance.now(),
+    };
+    invalidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exploded, explodeFactor, gl]);
+  }, [exploded]);
+
+  useEffect(() => {
+    if (!exploded || explodeAnim.current) return;
+    explodeCurrent.current = explodeFactor;
+    applyExplodeFactor(explodeFactor);
+    gl.shadowMap.needsUpdate = true;
+    invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explodeFactor]);
 
   const progress = useAppStore((s) => s.progress);
 
@@ -352,6 +377,17 @@ export function StructureGlb() {
     if (mixer && duration > 0) {
       const target = progress * duration;
       if (Math.abs(mixer.time - target) > 1e-4) seek(target);
+    }
+
+    const anim = explodeAnim.current;
+    if (anim) {
+      const t = Math.min((performance.now() - anim.start) / EXPLODE_MS, 1);
+      const factor = anim.from + (anim.to - anim.from) * easeInOutCubic(t);
+      explodeCurrent.current = factor;
+      applyExplodeFactor(factor);
+      gl.shadowMap.needsUpdate = true;
+      invalidate();
+      if (t >= 1) explodeAnim.current = null;
     }
 
     cullClock.current += delta;

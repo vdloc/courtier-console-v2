@@ -1,77 +1,72 @@
-.timeline {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--s1);
-  height: 100%;
-  padding: var(--s2) var(--s4);
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.head {
+/* Floats over the viewport (mounted by Viewport.tsx) — App.module.css has
+   no bottom grid row for this any more. Same card language as Viewport's
+   .stats overlay: raised surface, soft border, modal shadow, so it reads as
+   "on top of the canvas" rather than a fourth panel. */
+.bar {
+  position: absolute;
+  left: 50%;
+  bottom: var(--s4);
+  transform: translateX(-50%);
+  z-index: 5;
   display: flex;
   align-items: center;
-  gap: var(--s3);
+  gap: var(--s2);
+  width: min(720px, calc(100% - var(--s4) * 2));
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--raised);
+  box-shadow: var(--shadow-modal);
 }
 
-.title {
-  color: var(--text-dim);
-  font-size: var(--fs-label);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+.playButton {
+  flex: 0 0 auto;
 }
 
-.spacer {
+.scrubWrap {
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .time {
-  color: var(--text);
-  font-size: var(--fs-small);
-  font-weight: var(--weight-medium);
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
 }
 
 .phaseName {
+  flex: 0 0 auto;
+  min-width: 72px;
   color: var(--primary-text);
   font-size: var(--fs-small);
+  font-weight: var(--weight-medium);
+  text-align: right;
 }
 
-.track {
-  position: relative;
-}
-
-.marks {
-  position: relative;
-  display: flex;
-  height: 14px;
-}
-
-.mark {
+/* A tick per phase boundary, drawn on the rail itself (Slider's `marks`
+   slot) — not a row of text labels below it. That's what used to overlap
+   into an unreadable run-on at narrow widths; a tick can't overlap. */
+.tick {
   position: absolute;
-  padding-left: var(--s1);
-  border-left: 1px solid var(--border);
-  color: var(--text-faint);
-  font-size: var(--fs-micro);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  white-space: nowrap;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--border);
   pointer-events: none;
 }
 
-.mark[data-active='true'] {
-  border-left-color: var(--primary);
-  color: var(--primary-text);
+.tick[data-active='true'] {
+  background: var(--primary);
 }
 
-/* Below this width the five labels overlap into an unreadable run-on
-   ("FOUNDATIONCOLUMNS…") — the track shrinks but the labels don't. The
-   active phase name is already shown redundantly in .phaseName above the
-   track, so dropping to tick-marks-only here loses nothing. */
 @media (max-width: 600px) {
-  .mark {
-    padding-left: 0;
-    font-size: 0;
+  .bar {
+    gap: var(--s1);
+    padding: var(--s1) var(--s2);
+  }
+
+  .phaseName {
+    display: none;
   }
 }

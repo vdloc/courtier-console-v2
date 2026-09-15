@@ -1,5 +1,6 @@
 import { Chip } from '../ui/primitives';
 import { DiagramScene } from '../diagram/DiagramScene';
+import { Timeline } from './Timeline';
 import { useAppStore } from '../store/useAppStore';
 import styles from './Viewport.module.css';
 
@@ -13,6 +14,7 @@ export function Viewport() {
   const hidden = useAppStore((s) => s.hidden);
   const layers = useAppStore((s) => s.layers);
   const glbComponents = useAppStore((s) => s.glbComponents);
+  const presenting = useAppStore((s) => s.presenting);
 
   // One model in both modes now, so one counting path for both.
   const glbMembers = Object.values(glbComponents);
@@ -49,6 +51,8 @@ export function Viewport() {
           ))}
         </div>
       )}
+
+      {!presenting && <Timeline />}
     </div>
   );
 }

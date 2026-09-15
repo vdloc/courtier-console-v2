@@ -17,22 +17,17 @@
   min-height: 200px;
 }
 
-/* ObjectTree only — its floor has to yield to .controls's below it, so it
-   can't share .grow's 200px with PropertyPanel, which has no such sibling. */
+/* ObjectTree only, paired with .controls (App.module.css) as an even 1:1
+   split of .left's height — a fixed share each, not two independent
+   min-height floors fighting over whatever's left. That fight is what used
+   to crush the tree to one row at short viewports (CRIT-01): giving each
+   region a guaranteed, content-independent share means neither one's
+   content (a long tree, a tall Controls block) can starve the other, at
+   any height. Each keeps its own internal scroll for whatever doesn't fit
+   its half. */
 .growTree {
-  flex: 1 1 auto;
-  min-height: 120px;
-}
-
-/* Below App.module.css's max-height:700px threshold, .controls stops
-   competing with the tree for space and lays out at full height instead —
-   see that file for why. Pinning the tree to a fixed, still-scrollable
-   window here (rather than flex:1 fighting for whatever's left) keeps it
-   from being squeezed to a sliver by that change. */
-@media (max-height: 700px) {
-  .growTree {
-    flex: 0 0 140px;
-  }
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .header {

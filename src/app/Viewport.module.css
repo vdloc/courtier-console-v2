@@ -14,10 +14,14 @@
   gap: var(--s2);
 }
 
+/* Top-right, not bottom-right: Timeline now floats over the bottom of the
+   viewport (Timeline.module.css) and would collide with a bottom-anchored
+   panel on narrow widths, where its ~full-width bar and this box's
+   right-aligned corner both want the same space. */
 .stats {
   position: absolute;
+  top: var(--s3);
   right: var(--s3);
-  bottom: var(--s3);
   min-width: 180px;
   padding: var(--s2) var(--s3);
   border: 1px solid var(--border-soft);

@@ -14,7 +14,9 @@ type Name =
   | 'cube'
   | 'ruler'
   | 'grid'
-  | 'eye';
+  | 'eye'
+  | 'play'
+  | 'pause';
 
 const PATHS: Record<Name, string> = {
   'chevron-down': 'M4 6.5 8 10.5 12 6.5',
@@ -32,6 +34,8 @@ const PATHS: Record<Name, string> = {
     'M2 10.5 10.5 2 14 5.5 5.5 14 2 10.5ZM5 7.5l1.5 1.5M7.5 5 9 6.5M9.8 2.6l1.6 1.6',
   grid: 'M2.5 2.5h5v5h-5v-5ZM8.5 2.5h5v5h-5v-5ZM2.5 8.5h5v5h-5v-5ZM8.5 8.5h5v5h-5v-5Z',
   eye: 'M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8ZM8 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
+  play: 'M5 3.2 12.5 8 5 12.8Z',
+  pause: 'M5.3 3v10M10.7 3v10',
 };
 
 export interface IconProps {

@@ -1,16 +1,17 @@
-/* Five regions, as in the previous project: the layout was the part of it that
-   worked. Panels draw their own borders here — the dark theme's 1px-gap trick
-   relies on every seam being one colour, which a light theme does not give. */
+/* Four regions — Timeline used to be a fifth, a full-width bottom row, but
+   now floats over .view as a media-player-style overlay (Viewport.tsx
+   mounts it), so there's nothing left to reserve that row for. Panels draw
+   their own borders here — the dark theme's 1px-gap trick relies on every
+   seam being one colour, which a light theme does not give. */
 .app {
   display: grid;
   width: 100%;
   height: 100%;
   grid-template-columns: var(--panel-left-w) minmax(0, 1fr) var(--panel-right-w);
-  grid-template-rows: var(--appbar-h) minmax(0, 1fr) var(--bottombar-h);
+  grid-template-rows: var(--appbar-h) minmax(0, 1fr);
   grid-template-areas:
-    'top    top    top'
-    'left   view   right'
-    'bottom bottom bottom';
+    'top  top   top'
+    'left view  right';
   background: var(--canvas);
 }
 
@@ -32,12 +33,12 @@
   display: none;
 }
 
-/* Two independent scroll regions: one scroller collapses the tree to a row.
-   The floor keeps Layers/Display Mode/Tools reachable instead of being
-   crushed to a sliver while the tree above holds its own floor. */
+/* Paired with .growTree (panels.module.css) as an even 1:1 split of .left's
+   height — see that file for why this replaced two independent min-height
+   floors. */
 .controls {
-  flex: 0 1 auto;
-  min-height: 120px;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -60,10 +61,6 @@
 /* display: flex above beats the UA [hidden] rule on its own — restate it. */
 .right[hidden] {
   display: none;
-}
-
-.bottom {
-  grid-area: bottom;
 }
 
 /* Present mode: every docked panel is `hidden`, so give the viewport the
@@ -90,15 +87,14 @@
   .app {
     grid-template-columns: var(--panel-left-w) minmax(0, 1fr);
     grid-template-areas:
-      'top    top'
-      'left   view'
-      'bottom bottom';
+      'top  top'
+      'left view';
   }
 
   .scrim {
     display: block;
     position: fixed;
-    inset: var(--appbar-h) 0 var(--bottombar-h) 0;
+    inset: var(--appbar-h) 0 0 0;
     z-index: 19;
     border: none;
     padding: 0;
@@ -109,7 +105,7 @@
     position: fixed;
     top: var(--appbar-h);
     right: 0;
-    bottom: var(--bottombar-h);
+    bottom: 0;
     z-index: 20;
     width: min(360px, 100vw);
     box-shadow: var(--shadow-modal);
@@ -142,45 +138,20 @@
   }
 }
 
-/* Short viewports (laptop with devtools open, a windowed browser): .growTree
-   and .controls each hold a 120px floor (panels.module.css, above) and each
-   scroll independently. At normal heights that's fine, but below this
-   threshold .controls's own content (Layers + View + Tools) is taller than
-   either floor leaves room for, and its *own* auto-scroll region ends up
-   squeezed so hard that Tools sits below the fold with no obvious way to
-   reach it — a nested scrollbar inside an already-short column.
-   Fix: pin the tree to a small, still-internally-scrollable window instead
-   of letting it fight .controls for space, let .controls lay out at its
-   full natural height (no independent scroll of its own), and make .left
-   the one column that scrolls — Tools becomes reachable by scrolling the
-   same bar that reveals the rest of the panel, not a second hidden one. */
-@media (max-height: 700px) {
-  .left {
-    overflow-y: auto;
-  }
-
-  .controls {
-    flex: 0 0 auto;
-    min-height: 0;
-    overflow-y: visible;
-  }
-}
-
 /* Below 900px .left leaves the grid too — the model itself must stay reachable. */
 @media (max-width: 900px) {
   .app {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'top'
-      'view'
-      'bottom';
+      'view';
   }
 
   .left {
     position: fixed;
     top: var(--appbar-h);
     left: 0;
-    bottom: var(--bottombar-h);
+    bottom: 0;
     z-index: 20;
     width: min(var(--panel-left-w), 88vw);
     box-shadow: var(--shadow-modal);

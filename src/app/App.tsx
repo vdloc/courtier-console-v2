@@ -5,7 +5,6 @@ import { Layers } from './Layers';
 import { ViewControls } from './ViewControls';
 import { PropertyPanel } from './PropertyPanel';
 import { MeasurePanel } from './MeasurePanel';
-import { Timeline } from './Timeline';
 import { Viewport } from './Viewport';
 import { PresentStepper } from './PresentStepper';
 import { Gallery } from '../gallery/Gallery';
@@ -98,10 +97,6 @@ export default function App() {
         />
         <MeasurePanel />
         <PropertyPanel />
-      </div>
-
-      <div className={styles.bottom} hidden={presenting || undefined}>
-        <Timeline />
       </div>
 
       {presenting && <PresentStepper />}
