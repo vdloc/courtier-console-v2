@@ -19,7 +19,7 @@ const MODES: { id: ViewMode; label: string; hint: string }[] = [
     label: 'Realistic',
     hint: 'PBR materials, HDRI lighting, soft shadows',
   },
-  { id: 'engineering', label: 'Engineering', hint: 'Flat colour by element type' },
+  { id: 'engineering', label: 'Engineering', hint: 'Flat colour by structural role' },
 ];
 
 const AXES: SectionAxis[] = ['x', 'y', 'z'];
