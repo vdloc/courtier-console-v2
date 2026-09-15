@@ -99,9 +99,25 @@ Bên đó có ba bản section khác nhau. Điều đáng giá nhất, xác nh�
 4. Mẹo nhỏ đáng lấy: cộng `+0.1` vào hằng số mặt phẳng để chính hình vẽ của mặt
    cắt không tự cắt mình.
 
-Bổ sung sau khi §2.1 xong: gizmo kéo được. Cách họ làm — chiếu chuột lên một
-`PlaneGeometry(1e6, 1e6)` vô hình xoay về phía camera rồi suy ngược ra toạ độ.
-Đơn giản và chạy được.
+Bổ sung sau khi §2.1 xong: gizmo kéo được — ĐÃ XONG (`src/diagram/SectionGizmo.tsx`).
+
+Không lấy đúng "plane 1e6 facing camera" của họ — đó là kỹ thuật cho đặt điểm
+tự do 3D. Việc của ta bị khoá theo một trục (X/Y/Z), nên dùng kỹ thuật đúng
+hơn cho trường hợp này: mặt phẳng proxy *chứa* trục đang kéo, hướng quay về
+camera nhiều nhất có thể (lấy view direction trừ đi phần dọc theo trục) —
+chuẩn "single-axis translate" của mọi gizmo dịch chuyển 3D.
+
+Bẫy thật gặp phải: drei's `OrbitControls` có listener `pointerdown` riêng
+trên canvas, và event synthetic `onPointerDown` của R3F trên mesh không chắc
+chạy trước nó — kéo gizmo kéo luôn cả camera quay cùng lúc (đã đo được bằng
+Playwright: camera.position đổi trong lúc kéo). Sửa bằng cách tự bắt
+`pointerdown` ở **capture phase** trên canvas (luôn chạy trước bubble-phase
+listener của OrbitControls, không phụ thuộc thứ tự mount), tự raycast vào
+đúng mesh gizmo, và `stopImmediatePropagation()` khi trúng — chỉ khi trúng,
+nên orbit bình thường ở chỗ khác trong scene không bị ảnh hưởng. Nghiệm lại
+bằng Playwright sau fix: `camera.position` giữ nguyên trong lúc kéo gizmo,
+`sectionPosition` đổi đúng theo khoảng kéo; kéo ở vùng khác vẫn quay camera
+như cũ.
 
 ## P2.2 — Đo đạc: không có gì để lấy
 
