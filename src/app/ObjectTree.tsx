@@ -147,11 +147,11 @@ export function ObjectTree() {
           <button
             type="button"
             className={panels.link}
-            title="Isolate"
+            title="Isolate selection"
             onClick={isolateSelected}
             disabled={!selected}
           >
-            Isolate
+            Isolate selection
           </button>
         )}
         <span className={panels.count}>{rows.length} rows</span>

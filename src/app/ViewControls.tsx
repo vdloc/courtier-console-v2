@@ -117,6 +117,19 @@ export function ViewControls() {
             <button
               type="button"
               className={styles.pick}
+              title={`Reset view (${shortcutFor('reset-view')})`}
+              aria-keyshortcuts={shortcutFor('reset-view')}
+              onClick={requestReset}
+            >
+              Reset view
+            </button>
+          </div>
+          {/* Not camera moves: Explode changes what's drawn, Statistics is a
+              debug overlay — kept out of the navigation grid above. */}
+          <div className={`${styles.buttonGrid} ${styles.cols2}`}>
+            <button
+              type="button"
+              className={styles.pick}
               data-active={exploded ? 'true' : undefined}
               title={`Explode (${shortcutFor('toggle-explode')})`}
               aria-keyshortcuts={shortcutFor('toggle-explode')}
@@ -132,15 +145,6 @@ export function ViewControls() {
               onClick={toggleStats}
             >
               Statistics
-            </button>
-            <button
-              type="button"
-              className={styles.pick}
-              title={`Reset view (${shortcutFor('reset-view')})`}
-              aria-keyshortcuts={shortcutFor('reset-view')}
-              onClick={requestReset}
-            >
-              Reset view
             </button>
           </div>
         </div>
@@ -186,19 +190,21 @@ export function ViewControls() {
         <header className={styles.header}>
           <span className={styles.title}>Display mode</span>
         </header>
-        <div className={styles.body}>
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={local.mode}
-              data-active={mode === m.id ? 'true' : undefined}
-              onClick={() => setMode(m.id)}
-            >
-              <span className={local.modeLabel}>{m.label}</span>
-              <span className={local.modeHint}>{m.hint}</span>
-            </button>
-          ))}
+        <div className={`${styles.body} ${styles.stack}`}>
+          <div className={`${styles.buttonGrid} ${styles.cols2}`}>
+            {MODES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={styles.pick}
+                data-active={mode === m.id ? 'true' : undefined}
+                onClick={() => setMode(m.id)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <p className={styles.hint}>{MODES.find((m) => m.id === mode)?.hint}</p>
         </div>
       </section>
 
@@ -306,7 +312,7 @@ export function ViewControls() {
             aria-keyshortcuts={shortcutFor('toggle-section')}
             onClick={toggleSection}
           >
-            {sectionEnabled ? 'Disable' : 'Enable'}
+            {sectionEnabled ? 'Disable section' : 'Enable section'}
           </button>
         </header>
         <div className={`${styles.body} ${styles.stack}`}>
