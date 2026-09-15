@@ -32,27 +32,43 @@ mà không kéo theo canvas.
 
 ---
 
-## 2. Hai chế độ
+## 2. Một model, hai chế độ vẽ
 
-- **Engineering**: hình hộp vẽ thủ công, sinh ra từ `src/diagram/model.ts` —
-  đây là generator duy nhất cho part, component và cây explorer, nên ba thứ
-  đó không bao giờ lệch id nhau. Đây là chế độ đo đạc hoạt động.
-- **Realistic**: nạp `public/structure_demo.glb` (nén Draco, giải nén qua
-  `public/draco/`), chiếu sáng bằng HDRI (`public/env/site_2k.hdr`), qua một
-  chuỗi postprocessing (AO ở High, tone mapping, SMAA).
+Cả hai mode vẽ **cùng một model** — `public/structure_demo.glb` (nén Draco,
+giải nén qua `public/draco/`) nạp bởi `src/diagram/realistic/StructureGlb.tsx`,
+mount ở cả hai mode. `src/diagram/model.ts` — generator thủ công cũ — đã bị
+xoá; không còn hai scene khác nhau để lệch id, vì chỉ còn một nguồn.
 
-Ở Realistic, cây Model explorer đọc thẳng member của GLB (tầng → loại cấu
-kiện → member), còn Engineering vẫn dùng cây sinh từ `model.ts`.
+- **Realistic**: vật liệu PBR gốc từ GLB, chiếu sáng bằng HDRI
+  (`public/env/site_2k.hdr`), một mặt đất thật (`shadowMaterial`, chỉ hiện ở
+  chỗ có bóng đổ) nhận bóng từ `directionalLight`, qua chuỗi postprocessing
+  (AO ở High/Balanced, tone mapping, SMAA).
+- **Engineering**: vật liệu phẳng theo vai trò cấu kiện (`ROLE_BY_KIND` trong
+  `palette.ts` — translucent / solid / service, không phải một màu riêng cho
+  mỗi `element_type`), cộng đường viền (`EdgesGeometry`) chỉ vẽ trên cấu kiện
+  kết cấu chính (`STRUCTURAL_TYPES` trong `rig.ts`).
 
-Measure chạy ở cả hai mode. Điểm đo gắn với member của một model, nên đổi mode
-thì xoá hết điểm — giữ lại sẽ ra con số sai mà trông như đúng.
+Model Explorer đọc thẳng member của GLB ở cả hai mode — không còn cây sinh ra
+riêng cho Engineering.
+
+Tiến độ thi công (`Construction sequence`) không còn là bốn mốc gõ tay: mỗi
+lần GLB nạp, `derivePhases()` (`src/diagram/realistic/phases.ts`) tính lại
+mốc từng phase từ chính keyframe của animation clip — thời điểm mỗi kênh
+"nhảy" giá trị lớn nhất, gom theo layer. Năm layer kết cấu/dịch vụ tách mốc
+rõ ràng; `Connections` (bu lông, mối hàn, tấm nối — 5528/6726 kênh) không có
+mốc riêng vì keyframe của nó trải dài qua cả `Columns` lẫn `Beams` — bắt bu
+lông là việc làm liên tục theo từng mối nối, không phải một bước thi công
+riêng. Nếu một bản GLB khác không animate đủ cả năm layer, `derivePhases()`
+trả về mảng rỗng và Timeline chỉ còn thanh trượt trơn, không tên phase — hành
+vi thật, không phải lý thuyết.
+
+Measure chạy ở cả hai mode, cùng một registry member (`glbMembers.ts`) —
+không còn khái niệm "đổi mode thì xoá điểm" vì chỉ còn một model để điểm gắn
+vào.
 
 Lỗ hổng đang biết, nói thẳng chứ không giấu:
 - **Tiết diện tròn** (ống, thanh treo, bu lông): ứng viên snap là góc/cạnh
   bbox, có thể nằm ngoài vật liệu.
-- **Timeline + Measure ở Realistic**: điểm theo pose lúc panel render lần cuối;
-  kéo timeline không cập nhật số đo. Chưa test.
-- **Section + Measure ở Realistic**: chưa test live.
 - Raycast của three không xét `visible`; `isRendered` trong `snapping.ts` là
   luật duy nhất cho cả select lẫn measure. Đừng lọc hit ở chỗ khác.
 
@@ -162,3 +178,8 @@ grep -rn "__debug\|window\.__\|console\.log" src
   lấy thuật toán nào và bỏ gì.
 - `docs/RESEARCH-3D-REALISM.md` — ghi chú nguồn gốc (primary-source) cho các
   kỹ thuật làm scene three.js/r3f trông thật hơn.
+- `docs/GLB-BOTH-MODES.md` — thiết kế cho việc gộp Engineering vào vẽ chung
+  một GLB với Realistic; ghi lại quyết định, không phải spec đang sống.
+- `docs/UI-AUDIT.md`, `docs/3D-AUDIT.md` — hai báo cáo audit độc lập, chốt ở
+  một commit cụ thể (ghi ngay đầu mỗi file). Đọc như biên bản phát hiện tại
+  thời điểm đó, không phải mô tả app hiện tại — đừng "sửa" chúng khi app đổi.
