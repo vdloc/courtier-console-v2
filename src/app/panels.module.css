@@ -17,17 +17,15 @@
   min-height: 200px;
 }
 
-/* ObjectTree only, paired with .controls (App.module.css) as an even 1:1
-   split of .left's height — a fixed share each, not two independent
-   min-height floors fighting over whatever's left. That fight is what used
-   to crush the tree to one row at short viewports (CRIT-01): giving each
-   region a guaranteed, content-independent share means neither one's
-   content (a long tree, a tall Controls block) can starve the other, at
-   any height. Each keeps its own internal scroll for whatever doesn't fit
-   its half. */
-.growTree {
-  flex: 1 1 0;
-  min-height: 0;
+/* ObjectTree's own scroll window when its section is expanded — the one
+   exception in an otherwise scroll-free accordion (see .collapseToggle
+   below). A 3362-member tree can't render every row into the DOM at once;
+   ObjectTree.tsx windows it, and that windowing needs a *bounded* height to
+   measure against. Every other section in .left just grows/shrinks with
+   its content; this one caps at a fixed viewport and scrolls internally,
+   because unbounded here means "render 3362 rows," not "no scrollbar." */
+.treeScroll {
+  max-height: 320px;
 }
 
 .header {
@@ -46,6 +44,38 @@
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
+}
+
+/* The title, made clickable — every section in .left is a collapse/expand
+   toggle, not just a label. Other header controls (counts, "Hide layers",
+   "Isolate selection", ...) sit beside this in the same row and stay
+   independently clickable; only this button drives open/closed. */
+.collapseToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--fs-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.collapseToggle:hover {
+  color: var(--text);
+}
+
+/* Same WCAG 2.5.8 reasoning as .link above — the button's own box is just
+   its glyph height inside a 30px header row. */
+@media (max-width: 1200px) {
+  .collapseToggle {
+    padding: var(--s2) 0;
+    margin: calc(-1 * var(--s2)) 0;
+  }
 }
 
 .spacer {

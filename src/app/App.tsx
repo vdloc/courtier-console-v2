@@ -66,10 +66,8 @@ export default function App() {
         hidden={presenting || undefined}
       >
         <ObjectTree />
-        <div className={styles.controls}>
-          <Layers />
-          <ViewControls />
-        </div>
+        <Layers />
+        <ViewControls />
       </div>
 
       <div className={styles.view}>

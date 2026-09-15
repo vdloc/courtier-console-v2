@@ -88,6 +88,7 @@ export function ObjectTree() {
       : hidden.has(id);
   };
 
+  const [sectionOpen, setSectionOpen] = useState(true);
   const scroller = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ top: 0, height: 0, rowH: 32 });
   // Measured: ~1500 DOM rows cost 60-70 ms per keystroke; windowing only kicks in past this.
@@ -129,9 +130,17 @@ export function ObjectTree() {
     : rows.length;
 
   return (
-    <section className={`${panels.section} ${panels.growTree}`}>
+    <section className={panels.section}>
       <header className={panels.header}>
-        <span className={panels.title}>Model explorer</span>
+        <button
+          type="button"
+          className={panels.collapseToggle}
+          aria-expanded={sectionOpen}
+          onClick={() => setSectionOpen((o) => !o)}
+        >
+          <Icon name={sectionOpen ? 'chevron-down' : 'chevron-right'} size={12} />
+          Model explorer
+        </button>
         <span className={panels.spacer} />
         {hidden.size > 0 ? (
           <button
@@ -157,104 +166,108 @@ export function ObjectTree() {
         <span className={panels.count}>{rows.length} rows</span>
       </header>
 
-      <div className={styles.filter}>
-        <Input
-          placeholder="Mark, type or level"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          aria-label="Filter model"
-        />
-      </div>
-
-      <div
-        className={panels.scroll}
-        ref={scroller}
-        onScroll={
-          windowed
-            ? (e) => {
-                const top = e.currentTarget.scrollTop;
-                setView((v) => (v.top === top ? v : { ...v, top }));
-              }
-            : undefined
-        }
-      >
-        {filter && rows.length === 0 ? (
-          <div className={`${panels.empty} ${styles.filterEmpty}`}>
-            No matches for “{filter}”.
-            <br />
-            <button type="button" className={panels.link} onClick={() => setFilter('')}>
-              Clear filter
-            </button>
+      {sectionOpen && (
+        <>
+          <div className={styles.filter}>
+            <Input
+              placeholder="Mark, type or level"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              aria-label="Filter model"
+            />
           </div>
-        ) : (
-          <>
-            {first > 0 && <div style={{ height: first * view.rowH }} aria-hidden />}
-            {rows.slice(first, last).map(({ node, depth, hasChildren, open }) => {
-              const isHidden = isRowHidden(node.id);
-              // Groups are forced open while filtering; collapsing one would be invisible.
-              const toggle = () => {
-                if (hasChildren && filter === '') toggleCollapsed(node.id);
-              };
-              return (
-                <div
-                  key={node.id}
-                  className={styles.row}
-                  data-selected={selected?.id === node.id ? 'true' : undefined}
-                  data-hidden={isHidden ? 'true' : undefined}
-                  style={{ paddingLeft: 4 + depth * 12 }}
-                  onClick={() => (hasChildren ? toggle() : select(node.id))}
-                  role="treeitem"
-                  aria-selected={selected?.id === node.id}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      if (hasChildren) toggle();
-                      else select(node.id);
-                    }
-                  }}
-                >
-                  <span className={styles.caret}>
-                    {hasChildren && (
-                      <Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
-                    )}
-                  </span>
-                  <span
-                    className={`${styles.label} ${
-                      node.kind === 'level'
-                        ? styles.level
-                        : node.kind === 'system'
-                          ? styles.system
-                          : ''
-                    }`}
-                  >
-                    {node.label}
-                  </span>
-                  <span className={styles.detail}>{node.detail}</span>
-                  <span
-                    className={`${styles.dot} ${node.status ? STATUS_CLASS[node.status] : ''}`}
-                  />
-                  <button
-                    type="button"
-                    className={styles.iconToggle}
-                    data-on={isHidden ? 'true' : undefined}
-                    aria-label={isHidden ? 'Show' : 'Hide'}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setHidden(node.id, !isHidden);
-                    }}
-                  >
-                    <Icon name="eye" size={13} />
-                  </button>
-                </div>
-              );
-            })}
-            {last < rows.length && (
-              <div style={{ height: (rows.length - last) * view.rowH }} aria-hidden />
+
+          <div
+            className={`${panels.scroll} ${panels.treeScroll}`}
+            ref={scroller}
+            onScroll={
+              windowed
+                ? (e) => {
+                    const top = e.currentTarget.scrollTop;
+                    setView((v) => (v.top === top ? v : { ...v, top }));
+                  }
+                : undefined
+            }
+          >
+            {filter && rows.length === 0 ? (
+              <div className={`${panels.empty} ${styles.filterEmpty}`}>
+                No matches for “{filter}”.
+                <br />
+                <button type="button" className={panels.link} onClick={() => setFilter('')}>
+                  Clear filter
+                </button>
+              </div>
+            ) : (
+              <>
+                {first > 0 && <div style={{ height: first * view.rowH }} aria-hidden />}
+                {rows.slice(first, last).map(({ node, depth, hasChildren, open }) => {
+                  const isHidden = isRowHidden(node.id);
+                  // Groups are forced open while filtering; collapsing one would be invisible.
+                  const toggle = () => {
+                    if (hasChildren && filter === '') toggleCollapsed(node.id);
+                  };
+                  return (
+                    <div
+                      key={node.id}
+                      className={styles.row}
+                      data-selected={selected?.id === node.id ? 'true' : undefined}
+                      data-hidden={isHidden ? 'true' : undefined}
+                      style={{ paddingLeft: 4 + depth * 12 }}
+                      onClick={() => (hasChildren ? toggle() : select(node.id))}
+                      role="treeitem"
+                      aria-selected={selected?.id === node.id}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          if (hasChildren) toggle();
+                          else select(node.id);
+                        }
+                      }}
+                    >
+                      <span className={styles.caret}>
+                        {hasChildren && (
+                          <Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
+                        )}
+                      </span>
+                      <span
+                        className={`${styles.label} ${
+                          node.kind === 'level'
+                            ? styles.level
+                            : node.kind === 'system'
+                              ? styles.system
+                              : ''
+                        }`}
+                      >
+                        {node.label}
+                      </span>
+                      <span className={styles.detail}>{node.detail}</span>
+                      <span
+                        className={`${styles.dot} ${node.status ? STATUS_CLASS[node.status] : ''}`}
+                      />
+                      <button
+                        type="button"
+                        className={styles.iconToggle}
+                        data-on={isHidden ? 'true' : undefined}
+                        aria-label={isHidden ? 'Show' : 'Hide'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHidden(node.id, !isHidden);
+                        }}
+                      >
+                        <Icon name="eye" size={13} />
+                      </button>
+                    </div>
+                  );
+                })}
+                {last < rows.length && (
+                  <div style={{ height: (rows.length - last) * view.rowH }} aria-hidden />
+                )}
+              </>
             )}
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </section>
   );
 }

@@ -67,162 +67,199 @@ export function ViewControls() {
   const deleteViewpoint = useAppStore((s) => s.deleteViewpoint);
   const [vpName, setVpName] = useState('');
 
-  // Collapsed by default: Layers + View (+ Quality in Realistic) already push
-  // Tools below the fold, so the two least-reached-for sections start closed.
+  // Every section here is independently collapsible now (.left has no fixed
+  // scroll split any more — see App.module.css). Least-reached-for start
+  // closed; the rest start open since there's no shared height budget left
+  // to ration them against.
+  const [viewOpen, setViewOpen] = useState(true);
+  const [toolsOpen, setToolsOpen] = useState(true);
+  const [modeOpen, setModeOpen] = useState(true);
   const [qualityOpen, setQualityOpen] = useState(false);
   const [viewpointsOpen, setViewpointsOpen] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState(true);
 
   return (
     <>
       <section className={styles.section}>
         <header className={styles.header}>
-          <span className={styles.title}>View</span>
+          <button
+            type="button"
+            className={styles.collapseToggle}
+            aria-expanded={viewOpen}
+            onClick={() => setViewOpen((o) => !o)}
+          >
+            <Icon name={viewOpen ? 'chevron-down' : 'chevron-right'} size={12} />
+            View
+          </button>
         </header>
-        <div className={`${styles.body} ${styles.stack}`}>
-          <div className={`${styles.buttonGrid} ${styles.cols4}`}>
-            {SHOTS.map((s) => (
+        {viewOpen && (
+          <div className={`${styles.body} ${styles.stack}`}>
+            <div className={`${styles.buttonGrid} ${styles.cols4}`}>
+              {SHOTS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={styles.pick}
+                  data-active={shot === s.id ? 'true' : undefined}
+                  title={`${s.label} (${shortcutFor(`view-${s.id}`)})`}
+                  aria-keyshortcuts={shortcutFor(`view-${s.id}`)}
+                  onClick={() => requestShot(s.id)}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className={`${styles.buttonGrid} ${styles.cols2}`}>
               <button
-                key={s.id}
                 type="button"
                 className={styles.pick}
-                data-active={shot === s.id ? 'true' : undefined}
-                title={`${s.label} (${shortcutFor(`view-${s.id}`)})`}
-                aria-keyshortcuts={shortcutFor(`view-${s.id}`)}
-                onClick={() => requestShot(s.id)}
+                title={`Fit model (${shortcutFor('fit-model')})`}
+                aria-keyshortcuts={shortcutFor('fit-model')}
+                onClick={requestFitModel}
               >
-                {s.label}
+                Fit model
               </button>
-            ))}
+              <button
+                type="button"
+                className={styles.pick}
+                disabled={!selected}
+                title={`Focus selected (${shortcutFor('focus-selected')})`}
+                aria-keyshortcuts={shortcutFor('focus-selected')}
+                onClick={requestFocusSelected}
+              >
+                Focus selected
+              </button>
+              <button
+                type="button"
+                className={styles.pick}
+                title={`Reset view (${shortcutFor('reset-view')})`}
+                aria-keyshortcuts={shortcutFor('reset-view')}
+                onClick={requestReset}
+              >
+                Reset view
+              </button>
+            </div>
+            {/* Not camera moves: Explode changes what's drawn, Statistics is a
+                debug overlay — kept out of the navigation grid above. */}
+            <div className={`${styles.buttonGrid} ${styles.cols2}`}>
+              <button
+                type="button"
+                className={styles.pick}
+                data-active={exploded ? 'true' : undefined}
+                title={`Explode (${shortcutFor('toggle-explode')})`}
+                aria-keyshortcuts={shortcutFor('toggle-explode')}
+                onClick={toggleExplode}
+              >
+                Explode
+              </button>
+              <button
+                type="button"
+                className={styles.pick}
+                data-active={showStats ? 'true' : undefined}
+                title="Statistics"
+                onClick={toggleStats}
+              >
+                Statistics
+              </button>
+            </div>
           </div>
-          <div className={`${styles.buttonGrid} ${styles.cols2}`}>
+        )}
+      </section>
+
+      <section className={styles.section}>
+        <header className={styles.header}>
+          <button
+            type="button"
+            className={styles.collapseToggle}
+            aria-expanded={toolsOpen}
+            onClick={() => setToolsOpen((o) => !o)}
+          >
+            <Icon name={toolsOpen ? 'chevron-down' : 'chevron-right'} size={12} />
+            Tools
+          </button>
+        </header>
+        {toolsOpen && (
+          <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
             <button
               type="button"
               className={styles.pick}
-              title={`Fit model (${shortcutFor('fit-model')})`}
-              aria-keyshortcuts={shortcutFor('fit-model')}
-              onClick={requestFitModel}
+              data-active={measuring ? 'true' : undefined}
+              title={`Measure (${shortcutFor('measure-distance')})`}
+              aria-keyshortcuts={shortcutFor('measure-distance')}
+              onClick={toggleMeasuring}
             >
-              Fit model
+              Measure
             </button>
             <button
               type="button"
               className={styles.pick}
+              title="Isolate"
+              onClick={isolateSelected}
               disabled={!selected}
-              title={`Focus selected (${shortcutFor('focus-selected')})`}
-              aria-keyshortcuts={shortcutFor('focus-selected')}
-              onClick={requestFocusSelected}
             >
-              Focus selected
+              Isolate
             </button>
             <button
               type="button"
               className={styles.pick}
-              title={`Reset view (${shortcutFor('reset-view')})`}
-              aria-keyshortcuts={shortcutFor('reset-view')}
-              onClick={requestReset}
+              title={`Show all (${shortcutFor('show-all')})`}
+              aria-keyshortcuts={shortcutFor('show-all')}
+              onClick={showEverything}
             >
-              Reset view
+              Show all
             </button>
           </div>
-          {/* Not camera moves: Explode changes what's drawn, Statistics is a
-              debug overlay — kept out of the navigation grid above. */}
-          <div className={`${styles.buttonGrid} ${styles.cols2}`}>
-            <button
-              type="button"
-              className={styles.pick}
-              data-active={exploded ? 'true' : undefined}
-              title={`Explode (${shortcutFor('toggle-explode')})`}
-              aria-keyshortcuts={shortcutFor('toggle-explode')}
-              onClick={toggleExplode}
-            >
-              Explode
-            </button>
-            <button
-              type="button"
-              className={styles.pick}
-              data-active={showStats ? 'true' : undefined}
-              title="Statistics"
-              onClick={toggleStats}
-            >
-              Statistics
-            </button>
-          </div>
-        </div>
+        )}
       </section>
 
       <section className={styles.section}>
         <header className={styles.header}>
-          <span className={styles.title}>Tools</span>
+          <button
+            type="button"
+            className={styles.collapseToggle}
+            aria-expanded={modeOpen}
+            onClick={() => setModeOpen((o) => !o)}
+          >
+            <Icon name={modeOpen ? 'chevron-down' : 'chevron-right'} size={12} />
+            Display mode
+          </button>
         </header>
-        <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
-          <button
-            type="button"
-            className={styles.pick}
-            data-active={measuring ? 'true' : undefined}
-            title={`Measure (${shortcutFor('measure-distance')})`}
-            aria-keyshortcuts={shortcutFor('measure-distance')}
-            onClick={toggleMeasuring}
-          >
-            Measure
-          </button>
-          <button
-            type="button"
-            className={styles.pick}
-            title="Isolate"
-            onClick={isolateSelected}
-            disabled={!selected}
-          >
-            Isolate
-          </button>
-          <button
-            type="button"
-            className={styles.pick}
-            title={`Show all (${shortcutFor('show-all')})`}
-            aria-keyshortcuts={shortcutFor('show-all')}
-            onClick={showEverything}
-          >
-            Show all
-          </button>
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <header className={styles.header}>
-          <span className={styles.title}>Display mode</span>
-        </header>
-        <div className={`${styles.body} ${styles.stack}`}>
-          <div className={`${styles.buttonGrid} ${styles.cols2}`}>
-            {MODES.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className={styles.pick}
-                data-active={mode === m.id ? 'true' : undefined}
-                onClick={() => setMode(m.id)}
-              >
-                {m.label}
-              </button>
-            ))}
+        {modeOpen && (
+          <div className={`${styles.body} ${styles.stack}`}>
+            <div className={`${styles.buttonGrid} ${styles.cols2}`}>
+              {MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={styles.pick}
+                  data-active={mode === m.id ? 'true' : undefined}
+                  onClick={() => setMode(m.id)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <p className={styles.hint}>{MODES.find((m) => m.id === mode)?.hint}</p>
           </div>
-          <p className={styles.hint}>{MODES.find((m) => m.id === mode)?.hint}</p>
-        </div>
+        )}
       </section>
 
       {realistic && (
         <section className={styles.section}>
           <header className={styles.header}>
-            <span className={styles.title}>Quality</span>
+            <button
+              type="button"
+              className={styles.collapseToggle}
+              aria-expanded={qualityOpen}
+              onClick={() => setQualityOpen((o) => !o)}
+            >
+              <Icon name={qualityOpen ? 'chevron-down' : 'chevron-right'} size={12} />
+              Quality
+            </button>
             <span className={styles.spacer} />
             <span className={styles.count}>
               {QUALITIES.find((q) => q.id === quality)?.label}
             </span>
-            <button
-              type="button"
-              className={styles.link}
-              onClick={() => setQualityOpen(!qualityOpen)}
-            >
-              {qualityOpen ? 'Hide' : 'Show'}
-            </button>
           </header>
           {qualityOpen && (
             <div className={`${styles.body} ${styles.buttonGrid} ${styles.cols3}`}>
@@ -244,16 +281,17 @@ export function ViewControls() {
 
       <section className={styles.section}>
         <header className={styles.header}>
-          <span className={styles.title}>Viewpoints</span>
-          <span className={styles.spacer} />
-          <span className={styles.count}>{viewpoints.length}</span>
           <button
             type="button"
-            className={styles.link}
-            onClick={() => setViewpointsOpen(!viewpointsOpen)}
+            className={styles.collapseToggle}
+            aria-expanded={viewpointsOpen}
+            onClick={() => setViewpointsOpen((o) => !o)}
           >
-            {viewpointsOpen ? 'Hide' : 'Show'}
+            <Icon name={viewpointsOpen ? 'chevron-down' : 'chevron-right'} size={12} />
+            Viewpoints
           </button>
+          <span className={styles.spacer} />
+          <span className={styles.count}>{viewpoints.length}</span>
         </header>
         {viewpointsOpen && (
           <div className={`${styles.body} ${styles.stack}`}>
@@ -303,7 +341,15 @@ export function ViewControls() {
 
       <section className={styles.section}>
         <header className={styles.header}>
-          <span className={styles.title}>Section</span>
+          <button
+            type="button"
+            className={styles.collapseToggle}
+            aria-expanded={sectionOpen}
+            onClick={() => setSectionOpen((o) => !o)}
+          >
+            <Icon name={sectionOpen ? 'chevron-down' : 'chevron-right'} size={12} />
+            Section
+          </button>
           <span className={styles.spacer} />
           <button
             type="button"
@@ -315,40 +361,42 @@ export function ViewControls() {
             {sectionEnabled ? 'Disable section' : 'Enable section'}
           </button>
         </header>
-        <div className={`${styles.body} ${styles.stack}`}>
-          <div className={`${styles.buttonGrid} ${styles.cols4}`}>
-            {AXES.map((a) => (
+        {sectionOpen && (
+          <div className={`${styles.body} ${styles.stack}`}>
+            <div className={`${styles.buttonGrid} ${styles.cols4}`}>
+              {AXES.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  className={styles.pick}
+                  data-active={sectionEnabled && sectionAxis === a ? 'true' : undefined}
+                  disabled={!sectionEnabled}
+                  title={`Section across ${a.toUpperCase()} (${shortcutFor(`section-axis-${a}`)})`}
+                  aria-keyshortcuts={shortcutFor(`section-axis-${a}`)}
+                  onClick={() => setSectionAxis(a)}
+                >
+                  {a.toUpperCase()}
+                </button>
+              ))}
               <button
-                key={a}
                 type="button"
                 className={styles.pick}
-                data-active={sectionEnabled && sectionAxis === a ? 'true' : undefined}
+                data-active={sectionFlipped ? 'true' : undefined}
                 disabled={!sectionEnabled}
-                title={`Section across ${a.toUpperCase()} (${shortcutFor(`section-axis-${a}`)})`}
-                aria-keyshortcuts={shortcutFor(`section-axis-${a}`)}
-                onClick={() => setSectionAxis(a)}
+                title={`Flip section (${shortcutFor('section-flip')})`}
+                aria-keyshortcuts={shortcutFor('section-flip')}
+                onClick={toggleSectionFlip}
               >
-                {a.toUpperCase()}
+                Flip
               </button>
-            ))}
-            <button
-              type="button"
-              className={styles.pick}
-              data-active={sectionFlipped ? 'true' : undefined}
-              disabled={!sectionEnabled}
-              title={`Flip section (${shortcutFor('section-flip')})`}
-              aria-keyshortcuts={shortcutFor('section-flip')}
-              onClick={toggleSectionFlip}
-            >
-              Flip
-            </button>
+            </div>
+            <Slider
+              label="Section position"
+              value={sectionPosition}
+              onValueChange={setSectionPosition}
+            />
           </div>
-          <Slider
-            label="Section position"
-            value={sectionPosition}
-            onValueChange={setSectionPosition}
-          />
-        </div>
+        )}
       </section>
     </>
   );

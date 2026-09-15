@@ -19,11 +19,18 @@
   grid-area: top;
 }
 
+/* Stacked, independently collapsible sections (ObjectTree, Layers,
+   ViewControls) — not a fixed split between two scrolling panes any more.
+   Each section grows or shrinks with its own open/closed content; .left
+   itself is the one scrollbar, for whenever everything open at once still
+   doesn't fit the column. See panels.module.css's .collapseToggle/
+   .treeScroll for the per-section half of this. */
 .left {
   grid-area: left;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;
   border-right: 1px solid var(--border);
   background: var(--surface);
 }
@@ -31,15 +38,6 @@
 /* display: flex above beats the UA [hidden] rule on its own — restate it. */
 .left[hidden] {
   display: none;
-}
-
-/* Paired with .growTree (panels.module.css) as an even 1:1 split of .left's
-   height — see that file for why this replaced two independent min-height
-   floors. */
-.controls {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 .view {
