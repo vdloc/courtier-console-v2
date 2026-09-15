@@ -7,6 +7,7 @@ import { PropertyPanel } from './PropertyPanel';
 import { MeasurePanel } from './MeasurePanel';
 import { Timeline } from './Timeline';
 import { Viewport } from './Viewport';
+import { PresentStepper } from './PresentStepper';
 import { Gallery } from '../gallery/Gallery';
 import { IconButton } from '../ui/primitives';
 import { useAppStore } from '../store/useAppStore';
@@ -24,12 +25,13 @@ export default function App() {
   const toggleMeasuring = useAppStore((s) => s.toggleMeasuring);
   const explorerOpen = useAppStore((s) => s.explorerOpen);
   const setExplorerOpen = useAppStore((s) => s.setExplorerOpen);
+  const presenting = useAppStore((s) => s.presenting);
   const drawerOpen = Boolean(selected) || measuring;
 
   // Picking a measurement point IS clicking the canvas — a modal scrim would
   // eat every pick. Only block the canvas when the drawer is showing
   // properties alone; measuring always keeps it click-through beside itself.
-  const showScrim = (drawerOpen && !measuring) || explorerOpen;
+  const showScrim = ((drawerOpen && !measuring) || explorerOpen) && !presenting;
 
   const closeDrawer = useCallback(() => {
     select(null);
@@ -43,12 +45,16 @@ export default function App() {
   if (GALLERY) return <Gallery />;
 
   return (
-    <div className={styles.app}>
-      <div className={styles.top}>
+    <div className={styles.app} data-presenting={presenting ? 'true' : undefined}>
+      <div className={styles.top} hidden={presenting || undefined}>
         <TopBar />
       </div>
 
-      <div className={styles.left} data-open={explorerOpen ? 'true' : undefined}>
+      <div
+        className={styles.left}
+        data-open={explorerOpen ? 'true' : undefined}
+        hidden={presenting || undefined}
+      >
         <ObjectTree />
         <div className={styles.controls}>
           <Layers />
@@ -68,7 +74,11 @@ export default function App() {
           onClick={closeDrawer}
         />
       )}
-      <div className={styles.right} data-open={drawerOpen ? 'true' : undefined}>
+      <div
+        className={styles.right}
+        data-open={drawerOpen ? 'true' : undefined}
+        hidden={presenting || undefined}
+      >
         <IconButton
           icon="close"
           label="Close panel"
@@ -79,9 +89,11 @@ export default function App() {
         <PropertyPanel />
       </div>
 
-      <div className={styles.bottom}>
+      <div className={styles.bottom} hidden={presenting || undefined}>
         <Timeline />
       </div>
+
+      {presenting && <PresentStepper />}
 
       <ShortcutHelp />
     </div>

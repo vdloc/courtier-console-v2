@@ -18,6 +18,8 @@ export interface ViewSlice {
   showStats: boolean;
   /** The left panel, below the COMPACT breakpoint where it leaves the grid. */
   explorerOpen: boolean;
+  /** Client-presentation mode: docked panels hidden, viewport + viewpoint stepper only. */
+  presenting: boolean;
 
   sectionEnabled: boolean;
   sectionAxis: SectionAxis;
@@ -52,6 +54,7 @@ export interface ViewSlice {
   setExplodeFactor: (v: number) => void;
   toggleStats: () => void;
   setExplorerOpen: (open: boolean) => void;
+  togglePresent: () => void;
   toggleSection: () => void;
   setSectionAxis: (axis: SectionAxis) => void;
   setSectionPosition: (v: number) => void;
@@ -69,6 +72,7 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
   explodeFactor: 0.35,
   showStats: false,
   explorerOpen: false,
+  presenting: false,
 
   sectionEnabled: false,
   sectionAxis: 'x',
@@ -118,6 +122,7 @@ export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set)
   setExplodeFactor: (explodeFactor) => set({ explodeFactor }),
   toggleStats: () => set((s) => ({ showStats: !s.showStats })),
   setExplorerOpen: (explorerOpen) => set({ explorerOpen }),
+  togglePresent: () => set((s) => ({ presenting: !s.presenting })),
   toggleSection: () => set((s) => ({ sectionEnabled: !s.sectionEnabled })),
   setSectionAxis: (sectionAxis) => set({ sectionAxis }),
   setSectionPosition: (sectionPosition) => set({ sectionPosition }),

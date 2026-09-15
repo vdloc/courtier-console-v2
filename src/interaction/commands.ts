@@ -228,6 +228,15 @@ export const COMMANDS: Command[] = [
     run: () => useHelpStore.getState().toggle(),
   },
   {
+    id: 'toggle-present',
+    label: 'Present',
+    category: 'general',
+    shortcut: 'Shift+P',
+    hint: 'Hide the docked panels and step through saved viewpoints',
+    active: () => store().presenting,
+    run: () => store().togglePresent(),
+  },
+  {
     id: 'cancel',
     label: 'Cancel',
     category: 'general',
@@ -240,6 +249,10 @@ export const COMMANDS: Command[] = [
         return;
       }
       const s = store();
+      if (s.presenting) {
+        s.togglePresent();
+        return;
+      }
       if (s.explorerOpen) {
         s.setExplorerOpen(false);
         return;

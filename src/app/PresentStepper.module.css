@@ -1,0 +1,26 @@
+.bar {
+  position: fixed;
+  left: 50%;
+  bottom: var(--s5);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius-pill);
+  background: var(--navy);
+  color: var(--text-on-dark);
+  box-shadow: var(--shadow-modal);
+  transform: translateX(-50%);
+}
+
+.prev {
+  transform: rotate(180deg);
+}
+
+.name {
+  min-width: 120px;
+  padding: 0 var(--s2);
+  font-size: var(--fs-small);
+  text-align: center;
+}

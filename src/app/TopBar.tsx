@@ -10,6 +10,7 @@ export function TopBar() {
   const requestExport = useAppStore((s) => s.requestExport);
   const explorerOpen = useAppStore((s) => s.explorerOpen);
   const setExplorerOpen = useAppStore((s) => s.setExplorerOpen);
+  const togglePresent = useAppStore((s) => s.togglePresent);
   const toggleHelp = useHelpStore((s) => s.toggle);
 
   return (
@@ -26,6 +27,14 @@ export function TopBar() {
         aria-expanded={explorerOpen}
         className={styles.explorerToggle}
         onClick={() => setExplorerOpen(!explorerOpen)}
+      />
+      <IconButton
+        icon="eye"
+        tone="onDark"
+        label="Present"
+        title={`Present (${shortcutFor('toggle-present')})`}
+        aria-keyshortcuts={shortcutFor('toggle-present')}
+        onClick={togglePresent}
       />
       <IconButton
         icon="help"
