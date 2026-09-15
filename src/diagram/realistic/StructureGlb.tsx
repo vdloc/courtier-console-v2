@@ -36,6 +36,7 @@ import {
   type GlbMember,
 } from './glbMembers';
 import { applyGlbMode, disposeGlbMaterials, materialsFor } from './glbMaterials';
+import { derivePhases } from './phases';
 import { PALETTE } from '../palette';
 import { useAppStore } from '../../store/useAppStore';
 import { LAYERS, type ComponentInfo, type LayerName } from '../../store/types';
@@ -132,6 +133,7 @@ export function StructureGlb() {
   const exploded = useAppStore((s) => s.exploded);
   const explodeFactor = useAppStore((s) => s.explodeFactor);
   const registerComponents = useAppStore((s) => s.registerComponents);
+  const registerTimeline = useAppStore((s) => s.registerTimeline);
   const planes = useSectionPlanes(MODEL_BOUNDS);
   const mode = useAppStore((s) => s.mode);
 
@@ -219,6 +221,7 @@ export function StructureGlb() {
     }
 
     registerComponents(components);
+    registerTimeline(duration, derivePhases(animations, scene, layerOf, duration));
 
     if (animations.length > 0) {
       // The GLB is exported at frame 0 (scaled 0.001), so seek to the clip's end to show it built.
@@ -259,7 +262,7 @@ export function StructureGlb() {
       materialsRef.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, animations, duration, registerComponents, gl]);
+  }, [scene, animations, duration, registerComponents, registerTimeline, gl]);
 
   // The mount effect above only sets the material/edges for the mode active
   // at load; a later mode toggle needs its own pointer-swap pass.

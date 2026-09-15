@@ -1,4 +1,4 @@
-import type { LayerName, TimelinePhase, TreeNode, Viewpoint } from '../store/types';
+import type { LayerName, TreeNode, Viewpoint } from '../store/types';
 import { LAYERS } from '../store/types';
 
 export const PROJECT_NAME = 'Northgate Plant Extension';
@@ -17,15 +17,6 @@ export const INITIAL_LAYERS: Record<LayerName, boolean> = LAYERS.reduce(
   (acc, l) => ({ ...acc, [l]: true }),
   {} as Record<LayerName, boolean>,
 );
-
-export const PHASES: TimelinePhase[] = [
-  { name: 'Foundations', start: 0, end: 4.5 },
-  { name: 'Columns', start: 4.5, end: 9 },
-  { name: 'Beams', start: 9, end: 13.5 },
-  { name: 'Services', start: 13.5, end: 18 },
-];
-
-export const DURATION = 18;
 
 export const MOCK_VIEWPOINTS: Viewpoint[] = [
   {
