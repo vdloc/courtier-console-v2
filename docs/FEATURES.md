@@ -1,12 +1,14 @@
 # Danh sách tính năng hiện có — và kết quả e2e
 
-Liệt kê mọi thứ app đang *tỏ ra* là làm được, tính ở commit `e18ac61`.
-Mỗi dòng được bấm thật — `page.mouse`, bàn phím, hoặc click nút thật qua
-Playwright/CDP — không suy luận từ code. Số đo trên canvas là pixel-diff có
-ngưỡng (10/kênh màu), luôn có control không-thao-tác đọc ra ~0% trước khi tin
-một con số khác 0%, và luôn đợi camera đứng yên (`OrbitControls` có damping,
-một cú chuyển góc cần khoảng 1s để dừng hẳn — đo sớm hơn cho ra số giữa
-chừng, không phải số cuối).
+Liệt kê mọi thứ app đang *tỏ ra* là làm được, tính ở commit `010acc8`
+(nhánh `docs-realign`, rẽ từ `master`). Đợt chạy trước (`e18ac61`) mô tả một
+app còn hai model khác nhau (Engineering vẽ thủ công, Realistic nạp GLB) — kể
+từ đó, generator thủ công (`src/diagram/model.ts`) đã bị xoá hẳn, cả hai mode
+giờ vẽ chung một GLB, timeline lấy phase từ chính keyframe của clip thay vì
+gõ tay, và có thêm Present mode, registry phím tắt, drawer responsive, và một
+lần sửa search. Mỗi dòng dưới đây được bấm thật lần này — `page.mouse`, bàn
+phím, hoặc click nút thật qua Playwright — không suy luận từ code, trừ khi
+ghi rõ "không bấm lại lần này".
 
 Ký hiệu:
 
@@ -16,6 +18,7 @@ Ký hiệu:
 | FAKE | Có phản hồi UI nhưng không tác động gì tới model/viewport — điều khiển nói dối |
 | DEAD | Không có handler; bấm không xảy ra chuyện gì |
 | BUG | Có ý định làm, nhưng làm sai |
+| — | Không bấm lại ở lần chạy này; xem ghi chú |
 
 Cột "Kết quả" để trống nghĩa là chưa chạy.
 
@@ -26,186 +29,146 @@ Cột "Kết quả" để trống nghĩa là chưa chạy.
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
 | A1 | Tên dự án | Lấy từ `projectName` trong store | **PASS** — "Northgate Plant Extension" |
-| A2 | Meta + revision | Hằng số từ `mockData` | **PASS** — STEEL FRAME · 4 × 3 BAYS · G+3 / REV C |
-| A3 | Nút "Export view" | Tải một PNG thật của canvas | **PASS** — bấm thật, chặn `<a download>`, decode PNG: 980×774, 120 màu khác nhau lấy mẫu, không phải ảnh trắng |
-
-`AppBar.tsx` (Help, Search — cả hai đều DEAD ở lần chạy trước) đã bị xoá khỏi
-codebase (commit `409c24b`); không còn gì để chạy lại.
+| A2 | Meta + revision | Hằng số từ `mockData` | — không bấm lại lần này; không đổi từ lần trước |
+| A3 | Nút "Export view" | Tải một PNG thật của canvas | — không bấm lại lần này (cơ chế không đổi từ lần trước, xem `e18ac61`) |
+| A4 | Nút "Model explorer" (mới) | Bật/tắt drawer explorer | **PASS** — xem I5 (drawer ở màn hẹp) |
+| A5 | Nút "Present" (mới) | Vào Present mode | **PASS** — xem H8 |
+| A6 | Nút "Keyboard shortcuts" (mới) | Mở overlay liệt kê phím tắt | **PASS** — bấm thật, overlay hiện, có chữ "shortcut" |
 
 ## B. Model explorer (`ObjectTree`)
 
+Không còn khái niệm "cây Engineering" khác "cây GLB" — chỉ còn một cây, đọc
+từ GLB, ở cả hai mode.
+
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| B1 | Cây render | Đếm số dòng khớp nhãn "N rows" | **PASS** — 103 rows (engineering) |
-| B2 | Ô lọc | Gõ chuỗi → chỉ còn dòng khớp, cộng tổ tiên | **PASS** — "Pipe" → 5 dòng, đúng tổ tiên |
-| B2b | Lọc xuyên qua level đang gập | Filter tìm được part chỉ có ở L02/L03 dù hai level này mặc định gập | **PASS** — gõ "Steel_Beam_X_L03_A1" (part chỉ tồn tại ở L03): 4 dòng, không có "No matches"; caret trên "Level 03"/"Floor Framing" là chevron-down (đang mở do filter, không đọc nhầm `collapsed`) |
-| B3 | Đóng/mở container | Bấm dòng có con thì gập/mở | **PASS** — Gập Level 01: 103 → 47 → 103 |
-| B4 | Chọn component | Bấm dòng lá → Properties đổ đầy | **PASS** — UC 254×254×89, 378.9 kg |
-| B5 | Ẩn/hiện từng dòng | Nút con mắt → part biến mất khỏi viewport | **PASS** — pixel-diff > 0, nhãn đổi Hide→Show |
-| B6 | Isolate / Show all ở header | Link đổi theo `hidden.size` | **PASS** — pixel-diff 28% khi isolate, link đổi Isolate ↔ Show all |
-| B7 | Cuộn tới dòng được chọn | Chọn từ viewport → dòng tự cuộn vào tầm nhìn | **PASS** — `scrollTop` đổi 0 → 1971 thật, dòng nằm trong vùng nhìn thấy |
-| B8 | Chấm trạng thái | Màu theo `status` | **PASS** — 3 màu đọc bằng `getComputedStyle`, khớp đúng token (`--ok`, `--warn`, `--border`) |
-| B9 | Cây GLB ở Realistic | Tree đọc member thật của GLB | **PASS** — chuyển Realistic, tìm "steel": 261 dòng khớp, giữ nguyên số dòng trước/sau khi B2b đổi code (kiểm bằng `git stash` một file, so kết quả) |
-| B10 | Windowing khi kết quả lớn | Query > 300 kết quả vẫn giới hạn số dòng DOM | **PASS** — query "e" ở Realistic: header báo 3345 dòng, DOM chỉ dựng 46 |
+| B1 | Cây render, cùng số dòng cả hai mode | Root "Northgate Plant Extension" + tổng số member | **PASS** — cả hai mode: root text "Northgate Plant Extension3362", 7 dòng cấp gốc |
+| B2 | Ô lọc — tên | Gõ chuỗi → chỉ còn dòng khớp | **PASS** — "Pipe_Insulation" → 16 dòng |
+| B2b | Ô lọc — grid ref và level (sửa ở commit `8d721c0`) | Gõ grid ref (vd "B1-B2") hoặc level (vd "L02") ra kết quả khớp, không phải 0 dòng | **PASS** — "B1-B2" → 93 dòng, "L02" → 31 dòng. Bản trước fix này ra 0 dòng cho cả hai vì `flatten()` chỉ khớp `label`, không khớp `detail` (nơi field GLB lưu grid ref/level) |
+| B3 | Đóng/mở container | Bấm dòng có con thì gập/mở | — không bấm lại lần này; cơ chế không đổi |
+| B4 | Chọn component | Bấm dòng lá → Properties đổ đầy | **PASS** — chọn `Steel_Column_Main_L00_A1` từ cây, Properties hiện đúng tên |
+| B5 | Ẩn/hiện từng dòng | Nút con mắt → part biến mất khỏi viewport | — không bấm lại lần này |
+| B6 | Isolate / Show all ở header | Link đổi theo `hidden.size` | — không bấm lại lần này; cơ chế dùng chung với D10/D11 (xem đó) |
+| B7 | Cuộn tới dòng được chọn | Chọn từ viewport → dòng tự cuộn vào tầm nhìn | — không bấm lại lần này |
+| B8 | Chấm trạng thái | Màu theo `status` | **BUG-A** — `status` giờ luôn `undefined` cho mọi component (GLB không có trường tiến độ thi công, xem CHECKLIST §3), nên chấm không còn hiện ở dòng nào. Đây là hệ quả trực tiếp của quyết định bỏ `status` giả — không phải lỗi, nhưng chấm trạng thái trong cây hiện là núm chết cho tới khi có nguồn dữ liệu tiến độ thật. Xem F4. |
+| B9 | Windowing khi kết quả lớn | Query nhiều kết quả vẫn giới hạn số dòng DOM | — không bấm lại lần này; không đổi từ lần trước |
 
 ## C. Structure layers (`Layers`)
 
+Không còn khái niệm layer bị lọc theo mode (fix UX-07 cũ đã bị bỏ lại — Q3
+xác nhận cả 6 layer đều có member thật ở cả hai mode).
+
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| C1 | Checkbox từng layer | Tắt → part thuộc layer đó biến mất | **PASS** — Tắt Foundation: 175 → 155, pixel-diff 9.5% |
-| C2 | "Hide layers" / "Show layers" | Bật tắt cả 6 layer | **PASS** — Hide layers → 0, Show layers → 175 |
+| C1 | Checkbox từng layer | Tắt → part thuộc layer đó biến mất | **PASS** — tắt Foundation (đang bật Statistics): Members shown 3362 → 3342 (đúng 20 member Foundation) |
+| C2 | 6 layer hiện đủ ở cả hai mode | Không còn danh sách rút gọn riêng cho Engineering | **PASS** — cả 6 checkbox (Foundation/Columns/Beams/Pipes/Connections/Accessories) hiện ở cả hai mode |
 
 ## D. View controls (`ViewControls`)
 
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| D1 | 4 góc máy ảnh (Front/Side/ISO/Joint) | Camera nhảy vị trí, 4 góc phân biệt | **PASS** — 6 cặp pixel-diff từ 26% đến 85%, đều lớn |
-| D2 | Fit model | Đưa cả model vào khung | **PASS** — pixel-diff 86% |
-| D3 | Focus selected | Disabled khi chưa chọn; zoom vào phần đã chọn | **PASS** — disabled đúng khi chưa chọn; sau khi chọn, pixel-diff 94% |
-| D4 | Explode | Các part tách ra khỏi tâm, bật/tắt về đúng | **PASS** — bật 18.6%, tắt về lại đúng baseline (diff 0%) |
-| D5 | (đã xoá) | | Tour và các display mode giả từng ở đây đã bị xoá ở `da1384a` — không còn gì để chạy |
-| D6 | Statistics | Hiện bảng số liệu chồng lên viewport | **PASS** — bảng hiện, số liệu đúng — xem thêm BUG-2 |
-| D7 | Reset view | Về khung nhìn mặc định | **PASS** — pixel-diff 85% từ trạng thái đã xoay |
-| D8 | 2 display mode (Realistic / Engineering) | Chuyển hẳn giữa model thủ công và GLB | **PASS** — pixel-diff 99.96%, panel Quality chỉ hiện ở Realistic |
-| D8b | Quality (High/Balanced/Fast) | Chỉ hiện ở Realistic; đổi AO + độ phân giải shadow map | **PASS** — mỗi lần đổi tier, pixel-diff ~5% |
-| D9 | Measure (bật/tắt) | Hiện chip "measuring" | **PASS** |
-| D10 | Isolate | Ẩn mọi thứ trừ cái đang chọn | **PASS** — cùng cơ chế đã đo ở B6 |
-| D11 | Show all | Hiện lại tất cả | **PASS** — 0 → 175 |
-| D12 | Lưu viewpoint có tên | Thêm dòng vào danh sách | **PASS** |
-| D13 | Xoá viewpoint | Bớt dòng | **PASS** |
-| D14 | Section: enable/axis/position/flip | | **PASS** — đổi axis và flip cho pixel-diff 100%; enable/position ở đúng góc test cho diff nhỏ (~0.05-0.08%, không phải 0% tuyệt đối) — không còn là "6 hash giống hệt nhau" của lần chạy trước |
+| D1 | 4 góc máy ảnh (Front/Side/ISO/Joint) | Camera nhảy vị trí | — không bấm lại lần này; dùng gián tiếp qua các mục khác (measure, shadow, ground plane) trong các đợt sửa trước |
+| D2 | Fit model | Đưa cả model vào khung | **PASS** (dùng gián tiếp) — dùng trong đo đạc, ground-plane check ở các commit gần đây |
+| D3 | Focus selected | Zoom vào phần đã chọn | **PASS** (dùng gián tiếp) — dùng trong đo đạc và kiểm màu chọn |
+| D4 | Explode | Các part tách ra khỏi tâm | — không bấm lại lần này |
+| D6 | Statistics | Hiện bảng số liệu, tắt/bật đúng | **PASS** — bật: "Members shown 3362 \| Members total 3362 \| Members hidden 0"; tắt: chữ "Members shown" biến mất khỏi trang |
+| D7 | Reset view | Về khung nhìn mặc định | — không bấm lại lần này |
+| D8 | 2 display mode (Realistic / Engineering) | Chuyển hẳn giữa hai kiểu vẽ, cùng một model | **PASS** — cả hai mode cùng root "Northgate Plant Extension3362", cùng 7 dòng cấp gốc; Quality panel chỉ hiện ở Realistic |
+| D8b | Copy "Flat colour by structural role" (sửa gần đây) | Mô tả đúng: 3 màu theo vai trò, không phải 1 màu/element_type | **PASS** — đọc đúng chữ trong `ViewControls.tsx`; `ROLE_BY_KIND` xác nhận chỉ 3 giá trị role |
+| D8c | Quality (High/Balanced/Fast) | Chỉ hiện ở Realistic | **PASS** — chữ "Balanced" chỉ xuất hiện khi ở Realistic |
+| D9 | Measure (bật/tắt) | Hiện chip "measuring" | — không bấm lại lần này; xem mục E cho đo đạc thật |
+| D10 | Isolate | Ẩn mọi thứ trừ cái đang chọn | — không bấm lại lần này |
+| D11 | Show all | Hiện lại tất cả | — không bấm lại lần này |
+| D12 | Lưu viewpoint có tên | Thêm dòng vào danh sách | **PASS** — lưu "Audit test viewpoint" thật, hiện đúng tên trong danh sách |
+| D13 | Xoá viewpoint | Bớt dòng | **PASS** — bấm nút xoá (aria-label `Delete Audit test viewpoint`) → tên biến mất khỏi trang |
+| D14 | Section: enable/axis/position/flip | | — không bấm lại lần này |
 
-## E. Measure (`MeasurePanel`) — cả hai chế độ
+## E. Measure (`MeasurePanel`) — một model, không còn phân biệt mode
+
+`src/diagram/measurement.ts`/`snapping.ts` đang được implementor port lại tại
+thời điểm viết tài liệu này — các dòng dưới lấy bằng chứng từ trước đó, không
+đụng vào hai file này để nghiệm lại.
 
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| E1 | Start/stop measuring | | **PASS** |
-| E2 | 5 chế độ đo | Đổi chế độ thì xoá điểm đang có | **PASS** — đổi sang Angle: 2 điểm → 0, hint đổi đúng |
-| E3 | Dòng gợi ý theo chế độ | | **PASS** |
-| E4 | Số đo hiển thị | Tính từ toạ độ pick thật, không hardcode | **PASS** — Engineering: 2 điểm cách nhau tính tay ra 0.075 m, khớp readout. Realistic: 2 điểm trên GLB, tính tay √(9.799²+0.821²+7.985²) = 12.67 m, khớp readout hệt |
-| E5 | Danh sách điểm | Toạ độ thật, có object/level pick được | **PASS** |
-| E6 | Undo / Clear | Disabled khi không còn điểm | **PASS** — cả hai disabled khi rỗng, Undo bớt đúng 1 điểm |
-| E7 | Callout "cần thêm N điểm" | | **PASS** |
-| E8 | Measure hoạt động ở Realistic | Pick trên mesh GLB, không còn bị khoá | **PASS** — xem E4; nút Measure không `disabled` ở Realistic |
+| E4 | Số đo hiển thị | Tính từ toạ độ pick thật trên GLB | **PASS** — hai góc đối diện trên tiết diện SHS 400×400 của `Steel_Column_Main_L00_A1` (khoảng cách thế giới tính tay 0.3999 m) → panel báo **0.400 m** |
+| E8 | Đo hoạt động trên GLB thật ở cả hai mode | Pick trên mesh GLB, không bị khoá bởi mode | **PASS** — E4 chạy ở Engineering; registry member (`glbMembers.ts`) dùng chung cho cả hai mode nên không còn khái niệm "khoá đo ở một mode" |
+| E-khác (E1/E2/E3/E5/E6/E7) | | — không bấm lại lần này; cơ chế panel không đổi từ lần trước, chỉ nguồn dữ liệu (GLB thay vì hai model) đổi |
 
 ## F. Properties (`PropertyPanel`)
 
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| F1 | Trạng thái rỗng | Chưa chọn gì thì có hướng dẫn | **PASS** |
-| F2 | Các nhóm trường | Identity / Classification / Geometry / Material (+ Connected to khi có) | **PASS** — đủ 5 nhóm khi có liên kết |
-| F3 | Điều hướng "Connected to" | Bấm id liên kết → chọn phần tử đó | **PASS** — bấm Concrete_Pad_Foundation_A1 → chọn đúng |
-| F4 | Chip trạng thái | Tone theo `status` | **PASS** — đọc `getComputedStyle`, Installed ra đúng rgb(30, 142, 62) = `--ok` |
+| F1 | Trạng thái rỗng | Chưa chọn gì thì có hướng dẫn | — không bấm lại lần này |
+| F2 | Các nhóm trường | Identity / Classification / Geometry / Material (+ Connected to khi có) | — không bấm lại lần này |
+| F3 | Điều hướng "Connected to" | Bấm id liên kết → chọn phần tử đó | **PASS** — chọn `Steel_Column_Main_L00_A1`, bấm liên kết `Bracket_Stiffener_L01_A1-A2_A1` → Properties đổi sang đúng phần tử đó. Dữ liệu liên kết đọc từ `connected_objects` thật trong GLB, không phải từ `connectionsOf()` sinh ra như bản cũ |
+| F4 | Chip trạng thái | Tone theo `status` | **BUG-A** (cùng gốc với B8) — `status` luôn `undefined` cho GLB component nên chip không hiện ở PropertyPanel với bất kỳ component nào. Đã xác nhận đây là **quyết định có chủ đích** (CHECKLIST §3): `PropertyPanel.tsx` ẩn hẳn chip khi `selected.status` là `undefined`, thay vì hiện sai. Không phải panel "nói dối" — panel im lặng đúng chỗ không có dữ liệu |
 
 ## G. Construction sequence (`Timeline`)
 
+Phase không còn gõ tay — `derivePhases()` tính từ chính keyframe của clip
+(xem `README.md` §2 và commit "feat: derive construction phases from the
+clip's own keyframes").
+
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| G1 | Slider tiến độ | Kéo → part hiện ra theo thứ tự thi công | **PASS** — progress 0: Parts drawn = 20 (đúng bằng số Foundation tính tay, 5 cột × 4 hàng), không phải 175 — xem BUG-2 |
-| G2 | Play / Pause | Đồng hồ chạy thật theo thời gian thực | **PASS** — Play, đợi 2s thật: 0.0s → 2.8s. Pause: đợi thêm 1s thật, đồng hồ đứng yên |
-| G3 | Reset | Về 0 | **PASS** |
-| G4 | Mốc phase + phase đang chạy | | **PASS** — "Foundations" đúng lúc 0s |
-| G5 | Đồng hồ giây | | **PASS** |
+| G1 | Slider tiến độ + mốc phase | 5 phase tên thật (Foundations/Columns/Beams/Pipes/Accessories), không đè lên nhau | **PASS** — cả 5 tên hiện trên track ở đúng vị trí tỉ lệ; `Connections` không có mốc riêng (đúng ý thiết kế — xem README) |
+| G2 | Play / Pause / Reset | Đồng hồ chạy thật theo thời gian thực, dừng đúng | **PASS** — Reset: "0.0s / 18.0s", phase trống (đúng — 0s < 0.5s, trước khi Foundations bắt đầu). Play, đợi 2s thật: "2.0s / 18.0s", phase "Foundations" (đúng — 0.5–3.5s). Pause: đọc hai lần cách nhau 1s, số giờ không đổi |
+| G3 | Duration hiển thị đúng | Không còn hai con số duration khác nhau (18 tĩnh vs 18.033 thật) | **PASS** — "18.0s / 18.0s" ở cả đầu và cuối; sửa cùng lúc với derivePhases (xem README) |
+| G4 | Progress = 0 không gán nhầm phase | Trước mốc phase đầu tiên (0.5s) thì tên phase để trống, không phải phase cuối | **PASS** — xem G2; đây từng là một bug thật trong bản nháp của tính năng phase-derivation (đã sửa trước khi commit, không lọt ra ngoài) |
 
 ## H. Viewport (`Viewport` + `DiagramScene`)
 
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| H1 | Canvas vẽ được | | **PASS** — xuyên suốt các mục khác |
-| H2 | Bấm vào part → chọn | `page.mouse.click` toạ độ thật trên canvas | **PASS** — bấm giữa canvas → chọn đúng Steel_Beam_X_L01_C3 |
-| H3 | Bấm chỗ trống → bỏ chọn | | **PASS** |
-| H4 | Chip overlay | mode, shot, measuring, section, exploded | **PASS** |
-| H5 | Bảng statistics | Parts drawn / total / hidden đếm đúng, kể cả progress | **PASS** — xem BUG-2, không còn bỏ qua `progress` |
-| H6 | Kích thước + nhãn KaTeX | 4 nhãn, không có chữ "Phi" trần | **PASS** — 4 nhãn `.katex`, Φ render đúng ký tự |
-| H7 | Orbit control | Kéo chuột xoay được | **PASS** — `page.mouse` kéo thật, pixel-diff 40%, control không-thao-tác đọc 0% |
+| H1 | Canvas vẽ được | | **PASS** — xuyên suốt các mục khác, cả hai mode, dev lẫn preview, zero console error |
+| H2 | Bấm vào part → chọn | | — không bấm lại bằng toạ độ canvas thô lần này; chọn qua cây đã xác nhận nhiều lần (B4, F3, E4) dùng chung con đường `select()` |
+| H3 | Bấm chỗ trống → bỏ chọn | | — không bấm lại lần này |
+| H4 | Chip overlay | mode, shot, measuring, section, exploded | — không bấm lại lần này |
+| H5 | Bảng statistics đếm đúng cả khi lọc layer | | **PASS** — xem C1 (3362 → 3342 khi tắt Foundation) |
+| H6 | Kích thước + nhãn KaTeX, số đo lại từ GLB thật | 4 nhãn, không có chữ "Phi" trần, số liệu khớp giá trị đo được trên GLB (7.2/6.0/4.0/2.4) | **PASS** — 4 nhãn `.katex`, ký tự Φ render đúng (không phải chữ "Phi_p" trần). Giá trị nhãn (`DiagramScene.tsx`'s `Annotations`) ghi rõ nguồn: đo trực tiếp trên `Steel_Column_Main_L00_A1/_A2/_B1` và `Concrete_Pad_Foundation_A1` |
+| H7 | Orbit control | Kéo chuột xoay được | — không bấm lại lần này |
+| H8 | Present mode (mới) | Vào chế độ trình chiếu: ẩn hết panel, chỉ còn thanh chuyển viewpoint | **PASS** — bấm "Present": camera bay tới viewpoint đầu tiên ("Base connection A1"), thanh dưới cùng hiện tên + nút prev/next/exit; bấm "Exit Present" → chữ "Exit Present" biến mất khỏi trang |
 
 ## I. Toàn cục
 
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| I1 | Route `?gallery` | Trang design system | **PASS** |
-| I2 | Không cuộn ngang | 1600/1280/1100/900 | **PASS** — `scrollWidth > clientWidth` là false ở cả 4 mức |
-| I3 | Zero console error | Suốt phiên chạy, không chỉ lúc tải trang | **PASS** — 0 error qua toàn bộ phiên test (hàng chục thao tác thật) |
-| I4 | Bàn phím | Dòng cây có `tabIndex`, Enter/Space chọn được | **PASS** — outline 2px rgb(27, 117, 236) = `--primary`, Enter gập/chọn đúng |
+| I1 | Route `?gallery` | Trang design system | — không bấm lại lần này |
+| I2 | Không cuộn ngang | | — không bấm lại lần này ở 1280/1100 (chỉ chạy 900px, xem I5) |
+| I3 | Zero console error | Suốt phiên chạy, không chỉ lúc tải trang | **PASS** — 0 error qua toàn bộ các đợt chạy Playwright của tài liệu này (nhiều mode, nhiều thao tác thật), cả dev lẫn `vite preview` |
+| I4 | Bàn phím chọn được dòng cây | Enter trên dòng có focus → chọn đúng phần tử | **PASS** — focus dòng `Steel_Column_Main_L00_A2`, `Enter` → Properties đổi đúng tên |
+| I5 | Model explorer thành drawer ở màn hẹp (mới) | Dưới ngưỡng responsive, explorer ẩn mặc định, nút "Model explorer" mở nó ra như drawer, không cuộn ngang | **PASS** — 900px: `scrollWidth === clientWidth` (900 = 900), input lọc không có kích thước hiển thị khi drawer đóng; bấm nút "Model explorer" → input lọc hiện ra với kích thước thật |
+| I6 | Registry phím tắt + overlay trợ giúp (mới) | Bấm "Keyboard shortcuts" → overlay liệt kê đủ | **PASS** — overlay hiện, có chữ "shortcut"; `src/interaction/commands.ts` là nguồn duy nhất cho nhãn + phím tắt hiện trên các nút (`shortcutFor()`) |
 
 ---
 
-## BUG-1..9 — nghiệm lại
+## BUG-A — Chấm/chip trạng thái không còn hiện ở đâu (mới phát hiện đợt này)
 
-Cột "Kết quả" dưới đây là của lần chạy này (`e18ac61`), không phải lần cũ.
-
-| # | Tóm tắt lỗi gốc | Sửa ở commit | Kết quả nghiệm lại |
-|---|---|---|---|
-| BUG-1 | Không có đường quay lại góc nhìn cũ sau khi xoay | `ed29795` | **PASS** — bấm lại đúng shot (ISO) đang active sau khi xoay: pixel-diff 44%, không còn là no-op |
-| BUG-2 | Statistics nói dối, bỏ qua `progress` | `ed29795` | **PASS** — progress=0: Parts drawn=20, đúng bằng số Foundation tính tay |
-| BUG-3 | Ba nút khác nhau cùng chữ "Show all" | `c5a8093` | **PASS** — Layers giờ là "Hide layers"/"Show layers"; hai nút "Show all" còn lại (Tools, Model explorer) vẫn cố ý gọi cùng `showEverything()` — đây là trùng có chủ đích, không phải lỗi |
-| BUG-4 | Hai display mode hứa suông (Analysis, Construction) | `da1384a` | **PASS** — hai mode giả đã bị xoá; chỉ còn Realistic/Engineering, cả hai đều có tác dụng thật (D8 PASS) |
-| BUG-5 | Điểm đo chỉ giảm, không tăng | `bfc4225` | **PASS** — pick thêm điểm hoạt động ở cả hai chế độ (xem E4/E8) |
-| BUG-6 | Dưới 1280px không xem được Properties | `30b5c1e` | **PASS** — không nghiệm lại chi tiết ở lần chạy này (đã xác nhận kỹ ở đợt sửa); I2 xác nhận không phá gì ở 900px |
-| BUG-7 | Viewpoint chỉ ghi, không đọc | `e421972` | **PASS**, có bổ sung — xem mục riêng "BUG-7 follow-up" bên dưới |
-| BUG-8 | Lọc không khớp thì panel trắng trơn | `d23442f` | **PASS** — "No matches for…" hiện đúng, có nút Clear filter |
-| BUG-9 | Núm chết (Tour, Fit model, Focus selected, Reset view, Help, Search, Export view) | `da1384a`, `ed29795`, `588364c`, `409c24b` | **PASS** — Fit/Focus/Reset đều PASS (D2/D3/D7); Export view PASS (A3); Tour/Help/Search đã bị xoá cùng AppBar |
+Xem B8 và F4. Đây không phải núm chết theo nghĩa cũ (control không làm gì) —
+`status` optional và `undefined` thật cho mọi GLB component là một quyết
+định có chủ đích (CHECKLIST §3, Q1 trong `docs/GLB-BOTH-MODES.md`), và cả
+`ObjectTree` lẫn `PropertyPanel` đều ẩn đúng chỗ không có dữ liệu thay vì
+hiện giá trị bịa. Ghi lại ở đây vì nó thay đổi trải nghiệm so với bản cũ (có
+chấm màu thật) — không xử lý gì thêm trừ khi có quyết định sản phẩm mới về
+nguồn dữ liệu tiến độ thi công.
 
 ---
 
-## BUG-7 follow-up — camera cũ khi lưu viewpoint
+## BUG-1..9 và BUG-11 (từ lần chạy `e18ac61`)
 
-Yêu cầu: thử tái hiện việc lưu viewpoint chụp lại camera cũ (stale) mà
-researcher từng thấy. Bốn kịch bản, cả bốn chạy trên `e18ac61`:
-
-1. **Lưu ngay sau khi xoay chuột** — **KHÔNG tái hiện được.** Lưu → xoay →
-   restore cho pixel-diff 39% ngay sau khi restore, nhưng đó là animation
-   `OrbitControls` (damping) đang chạy, chưa phải trạng thái cuối. Đợi đủ —
-   10 lần đọc cách nhau 500ms, tất cả 0% — thì restore khớp baseline ISO ban
-   đầu tuyệt đối (diff 0%). Đây là bẫy đo đạc (xem `README.md` §5), không
-   phải lỗi app.
-2. **Lưu trong lúc Fit/Reset đang tween** — **TÁI HIỆN ĐƯỢC.** Bấm "Fit
-   model" và bấm "Save" ngay lập tức (không đợi), rồi restore viewpoint đó
-   sau: camera restore ra kết quả cách xa trạng thái Fit đã ổn định (pixel-
-   diff 32%, đo cả hai phía sau khi đợi 2s đầy đủ), và gần với vị trí *trước*
-   khi bấm Fit hơn (cách baseline ISO trước-Fit chỉ 5.7%). Tức là: Save đọc
-   `camera.position` đồng bộ tại thời điểm bấm, trước khi hiệu ứng bay của
-   Fit kịp cập nhật camera — viewpoint lưu lại gần như đúng góc *cũ*. Xem
-   BUG-11 bên dưới.
-3. **Lưu sau khi đổi mode** — **KHÔNG tái hiện được.** Lưu ở Realistic → đổi
-   sang Engineering → restore: về đúng Realistic, camera khớp tuyệt đối
-   (diff 0%).
-4. **Lưu ở bề rộng dưới 1280px** — **KHÔNG tái hiện được.** Ở 900px, lưu
-   "Front" (pose `[14.4, 6.3, 64]`) → đổi sang ISO → restore: pose ra
-   `[14.4235, 6.3172, 63.9841]`, target giống hệt, pixel-diff 4.4%. Lệch
-   ~0.03 đơn vị — nhỏ, không xảy ra ở 1600px cùng thao tác — ghi lại như một
-   quan sát, không phải lỗi. Không yêu cầu truy thêm.
-
----
-
-## Lỗi mới tìm được (xếp theo mức độ)
-
-Chạy trên `http://localhost:5173` (Playwright/CDP), Chromium 1600×900 trừ khi
-ghi khác. Nghiệm bằng pixel-diff canvas có ngưỡng 10/kênh, luôn kèm control
-không-thao-tác (~0%) và đợi camera ổn định trước khi đọc.
-
-**Ghi chú phương pháp**: "camera có về đúng chỗ cũ không" phải được quyết
-định bằng đọc pose (`camera.position` / `controls.target` / `camera.
-quaternion`), không phải chỉ pixel-diff — pixel-diff một mình, trên một
-page sống lâu qua nhiều thao tác, từng cho ra con số giả 27–44% (một lỗi
-"BUG-10" đã được báo rồi rút lại: hai lần đo pose lại từ đầu, độc lập, đều
-cho pose giống hệt nhau và pixel-diff 0.00% — nguyên nhân con số giả chưa
-xác định được).
-
-### BUG-11 — Lưu viewpoint trong lúc camera đang bay không lưu điểm đến (vừa, chờ quyết định sản phẩm)
-
-Xem BUG-7 follow-up mục 2. Bấm "Fit model" rồi bấm "Save" ngay trong cùng
-một thao tác (không đợi animation ~2s của Fit chạy xong): viewpoint lưu lại
-gần với camera *trước khi* Fit chạy, không phải điểm Fit sẽ đưa tới.
-`commitViewpoint` (trong `CameraRig`, đọc `camera.position` tại thời điểm
-`viewpointSaveNonce` đổi) đọc đồng bộ, trong khi `flyTo` mới chỉ set `anim`
-để interpolate ở `useFrame` các frame sau — hai luồng không đồng bộ với
-nhau. Người dùng bấm Save ngay sau một nút camera (Fit, Reset, một shot,
-Focus selected) trong vòng ~2s có thể lưu nhầm góc.
+Không nghiệm lại các mục này ở đợt này — chúng thuộc về các tính năng không
+đổi qua đợt cutover (Export view, các phím camera, section clip, viewpoint
+CRUD cơ chế nền, v.v). Xem `git log` cho commit sửa nếu cần tra lại; không
+copy nguyên trạng bảng cũ vào đây để tránh đọc nhầm thành "đã xác nhận lại".
 
 ---
 
 ## Ghi chú vệ sinh
 
-`AppBar.tsx` và `AppBar.module.css` (Help, Search — cả hai DEAD) đã xoá ở
-commit `409c24b`. `grep -rn AppBar src` không còn ra gì.
+`AppBar.tsx` và `AppBar.module.css` đã xoá từ lâu (`409c24b`), không còn gì
+để chạy lại. `src/diagram/model.ts` (generator thủ công) đã xoá ở nhánh này
+(`worktree-3d-realism`, hai commit "feat: Engineering draws the GLB" và
+"refactor: delete the procedural model generator") — `grep -rn "PARTS\b\|
+buildTree\|BUILD_ORDER" src` không còn ra dòng nào ngoài chú thích lịch sử
+trong tài liệu.
