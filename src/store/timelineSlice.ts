@@ -1,6 +1,5 @@
 import type { StateCreator } from 'zustand';
 import type { Playback, TimelinePhase } from './types';
-import { DURATION, PHASES } from '../lib/mockData';
 
 export interface TimelineSlice {
   phases: TimelinePhase[];
@@ -9,6 +8,8 @@ export interface TimelineSlice {
   /** 0..1 across the whole sequence. */
   progress: number;
 
+  /** Called once when the GLB's clip loads — phases are derived from its keyframes, not authored. */
+  registerTimeline: (duration: number, phases: TimelinePhase[]) => void;
   play: () => void;
   pause: () => void;
   reset: () => void;
@@ -20,10 +21,13 @@ export interface TimelineSlice {
 export const createTimelineSlice: StateCreator<TimelineSlice, [], [], TimelineSlice> = (
   set,
 ) => ({
-  phases: PHASES,
-  duration: DURATION,
+  phases: [],
+  // Nominal fallback shown for the brief window before the GLB's real clip registers.
+  duration: 18,
   playback: 'finished',
   progress: 1,
+
+  registerTimeline: (duration, phases) => set({ duration, phases }),
 
   // Resuming from a pause continues where it left off; from finished it restarts —
   // sitting at 1 doing nothing on Play is the bug this button exists to fix.

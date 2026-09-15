@@ -63,7 +63,7 @@ export function Timeline() {
         <span className={styles.phaseName}>{active?.name}</span>
         <span className={styles.spacer} />
         <span className={styles.time}>
-          {seconds.toFixed(1)}s / {duration}s
+          {seconds.toFixed(1)}s / {duration.toFixed(1)}s
         </span>
       </div>
 
