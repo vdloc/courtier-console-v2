@@ -35,6 +35,24 @@
   background: var(--surface);
 }
 
+/* panels.module.css's .section has no explicit flex property, so it
+   defaults to flex-shrink:1 with min-height:0 — fine for .right, where
+   PropertyPanel opts into shrinking/growing on purpose (panels.grow) to
+   fill the column and scroll internally. Here it's a real bug: flexbox
+   shrinks each section to fit .left's fixed grid-row height *before* ever
+   considering overflow, and since a section's min-height:0 floor lets it
+   shrink to nothing, .left's own overflow-y:auto never engages — sections
+   just get squeezed below their content's natural height, and the
+   squeezed-out content (e.g. Structure Layers' last checkbox row) paints
+   over whatever section comes next instead of scrolling into view.
+   Verified via Playwright: Accessories' checkbox bounding box landed
+   inside the View section's box. flex-shrink:0 here is what actually
+   makes "just scroll .left" the real behavior instead of "silently
+   overlap." */
+.left > section {
+  flex-shrink: 0;
+}
+
 /* display: flex above beats the UA [hidden] rule on its own — restate it. */
 .left[hidden] {
   display: none;
