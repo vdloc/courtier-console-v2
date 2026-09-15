@@ -1,7 +1,8 @@
 # Danh sách tính năng hiện có — và kết quả e2e
 
-Liệt kê mọi thứ app đang *tỏ ra* là làm được, tính ở commit `010acc8`
-(nhánh `docs-realign`, rẽ từ `master`). Đợt chạy trước (`e18ac61`) mô tả một
+Liệt kê mọi thứ app đang *tỏ ra* là làm được, chốt ở commit `010acc8` (nhánh
+`docs-realign`) cộng một đợt addendum tới `0c485ab` (nhánh `docs-addendum`,
+xem mục Addendum ngay dưới). Đợt chạy trước (`e18ac61`) mô tả một
 app còn hai model khác nhau (Engineering vẽ thủ công, Realistic nạp GLB) — kể
 từ đó, generator thủ công (`src/diagram/model.ts`) đã bị xoá hẳn, cả hai mode
 giờ vẽ chung một GLB, timeline lấy phase từ chính keyframe của clip thay vì
@@ -21,6 +22,31 @@ Ký hiệu:
 | — | Không bấm lại ở lần chạy này; xem ghi chú |
 
 Cột "Kết quả" để trống nghĩa là chưa chạy.
+
+---
+
+## Addendum — bốn commit sau `010acc8`, tới `0c485ab`
+
+Bổ sung, không chạy lại các mục đã xong ở đợt trước. Bốn commit:
+`e2bffd6` (đo đạc vẽ thật trong viewport), `57ec9a5` (breakpoint panel phải
+1280→1200), `378fe50` (quy ước tooltip đọc từ registry phím tắt), `0c485ab`
+(gộp lại cách trình bày panel).
+
+| # | Tính năng | Kỳ vọng | Kết quả |
+|---|---|---|---|
+| E4′ | Số đo hiển thị — vẽ thật trong viewport (thay E4 cũ, `e2bffd6` đổi hẳn cơ chế) | Hover trước khi click đầu tiên hiện gợi ý snap (nhãn loại snap + điểm cam); điểm đã chốt hiện marker; giữa hai điểm có đường dây cao su theo chuột; giá trị đo hiện ngay trên đường kích thước trong viewport, không chỉ trong panel | **PASS** — bấm thật trên `Steel_Column_Main_L00_A1` (tiết diện SHS 400): di chuột trước khi click hiện nhãn "Midpoint" màu cam tại điểm gần nhất; click điểm 1 → panel liệt kê "1 VERTEX Steel_Column_Main_L00_A1 0.200, 0.000, -0.200"; click điểm 2 → panel báo "DISTANCE 0.400 m" **và** dòng kích thước trong viewport tự vẽ số "0.400 m" kèm nhãn "Vertex" ngay trên đường đo — ảnh chụp `docs/ux-audit/addendum-measure-hover.png`, `-rubberband.png`, `-final.png` |
+| E8′ | Đo hoạt động ở cả hai mode, không khoá theo mode (nghiệm lại vì E4′ đổi cơ chế) | | **PASS** — chạy ở Engineering (ảnh chụp ở trên); registry `glbMembers.ts` không đổi, chỉ phần vẽ trong `RealisticScene`/`DiagramScene` đổi — không có lý do khác mode lại hỏng, nhưng chỉ xác nhận Engineering lần này |
+| J1 | Panel bên phải: breakpoint 1200px thay vì 1280 (`57ec9a5`) | Chọn một member ở đúng 1280px không còn bị scrim che canvas; dưới 1200px (kể cả đúng 1200) vẫn scrim đúng như thiết kế | **PASS** — kiểm cả bốn mức thật: 1100px scrim hiện, 1200px scrim hiện (đúng biên `max-width: 1200px`, inclusive), 1201px và 1280px scrim biến mất (`display: none`). Kiểm luôn control dương (scrim có xuất hiện được ở mức hẹp) để chắc câu lệnh chọn phần tử của test không sai |
+| J2 | Quy ước tooltip đọc từ registry phím tắt (`378fe50`) | Nút có phím tắt: tooltip "Nhãn (PHÍM)" đọc từ `shortcutFor()`. Nút không có phím tắt (vd Isolate — cố ý không gán phím vì đã có hai lối vào khác): tooltip vẫn có chữ thật, không còn `title={null}` | **PASS** — đọc `title` attribute thật của nút Isolate qua Playwright: `"Isolate"` (chuỗi có nội dung, không phải `null`/rỗng như trước fix). Đối chiếu code (`ViewControls.tsx:171`) xác nhận đây đúng là nhánh "nhãn thường khi không có phím" mà commit message mô tả, không phải thiếu sót |
+| J3 | Gộp cách trình bày panel (`0c485ab`) | View tách camera actions / Explode+Statistics; Display Mode cùng lưới chọn với Quality, mô tả xuống dòng hint; các nút bulk-toggle cùng một khuôn "động từ + tân ngữ" | **PASS** (quan sát qua DOM, không đo pixel) — `body.innerText` sau khi tải trang cho thấy đúng thứ tự mới: "VIEW / Front Side ISO Joint / Fit model Focus selected Reset view / Explode Statistics" (tách khỏi TOOLS), và "DISPLAY MODE / Realistic Engineering / Flat colour by st…" (mô tả trên hint line, không phải trong tên nút). "Isolate" ở Model Explorer đổi nhãn thành "Isolate selection" — khớp mô tả "một khuôn động từ + tân ngữ" |
+
+**Ghi nhận, không sửa** (theo yêu cầu — để lại cho người đo overflow sau này
+khỏi đuổi theo nhầm là lỗi mới): sáu `[role=checkbox]` (Radix, không phải
+`<input>` gốc) có `scrollHeight` 20px trong hộp `clientHeight` 14px,
+`overflow: visible` cả hai chiều — đo thật bằng `getComputedStyle`, không suy
+đoán. Không có gì bị cắt vì `overflow: visible`; đây là glyph tick của
+`Checkbox` primitive cao hơn hộp chứa nó, có từ trước đợt việc này, không
+phải hồi quy do bốn commit trên.
 
 ---
 
@@ -85,14 +111,15 @@ xác nhận cả 6 layer đều có member thật ở cả hai mode).
 
 ## E. Measure (`MeasurePanel`) — một model, không còn phân biệt mode
 
-`src/diagram/measurement.ts`/`snapping.ts` đang được implementor port lại tại
-thời điểm viết tài liệu này — các dòng dưới lấy bằng chứng từ trước đó, không
-đụng vào hai file này để nghiệm lại.
+**E4/E8 dưới đây đã lỗi thời** — chụp trước khi `e2bffd6` cho đo đạc vẽ thật
+trong viewport. Giữ lại vì số đo (0.400 m) vẫn đúng, nhưng cơ chế panel-only
+mà chúng mô tả không còn đúng nữa. Xem **E4′/E8′** ở mục Addendum đầu file
+để có bằng chứng bấm lại lần này, đúng cơ chế hiện tại.
 
 | # | Tính năng | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| E4 | Số đo hiển thị | Tính từ toạ độ pick thật trên GLB | **PASS** — hai góc đối diện trên tiết diện SHS 400×400 của `Steel_Column_Main_L00_A1` (khoảng cách thế giới tính tay 0.3999 m) → panel báo **0.400 m** |
-| E8 | Đo hoạt động trên GLB thật ở cả hai mode | Pick trên mesh GLB, không bị khoá bởi mode | **PASS** — E4 chạy ở Engineering; registry member (`glbMembers.ts`) dùng chung cho cả hai mode nên không còn khái niệm "khoá đo ở một mode" |
+| E4 | Số đo hiển thị (lỗi thời — xem E4′) | Tính từ toạ độ pick thật trên GLB | **PASS** — hai góc đối diện trên tiết diện SHS 400×400 của `Steel_Column_Main_L00_A1` (khoảng cách thế giới tính tay 0.3999 m) → panel báo **0.400 m** |
+| E8 | Đo hoạt động trên GLB thật ở cả hai mode (lỗi thời — xem E8′) | Pick trên mesh GLB, không bị khoá bởi mode | **PASS** — E4 chạy ở Engineering; registry member (`glbMembers.ts`) dùng chung cho cả hai mode nên không còn khái niệm "khoá đo ở một mode" |
 | E-khác (E1/E2/E3/E5/E6/E7) | | — không bấm lại lần này; cơ chế panel không đổi từ lần trước, chỉ nguồn dữ liệu (GLB thay vì hai model) đổi |
 
 ## F. Properties (`PropertyPanel`)
