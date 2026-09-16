@@ -19,18 +19,22 @@ Status: `[ ]` not run · `[x]` pass · `[!]` fail, see note.
   section's box. Fix: `.left > section { flex-shrink: 0 }`.
 
 ## Session note
-Playwright MCP disconnected twice mid-pass (once ~partway through, once
-right after triggering the Export-view download). Not an app bug — the
-browser tool itself dropped. Re-run remaining unchecked items once it's
-back.
+Playwright MCP disconnected three times across this pass (twice mid-run,
+once right after triggering the Export-view download), and the dev server
+itself also went down once between sessions. Not app bugs — restarted the
+server and reconnected each time, then resumed from this doc. Full pass is
+now complete.
 
 ## TopBar
-- [ ] Model explorer toggle (mobile width) — not reached before disconnect
-- [ ] Inspect toggle (opens right drawer with nothing selected) — not reached
-- [ ] Present toggle (enter/exit) — not reached
-- [x] Keyboard shortcuts toggle — click opened it; disconnected mid-check of
-      close-via-X/Esc/scrim, re-verify those three
-- [x] Export view — triggered a real `download` event before the disconnect
+- [x] Model explorer toggle (mobile width, ≤900px) — `.left` drawer
+      `data-open` null→true on click, visible; closed again via same toggle
+- [x] Inspect toggle (opens right drawer with nothing selected) — `.right`
+      drawer `data-open` null→true, visible; closed via X button
+- [x] Present toggle (enter/exit) — `data-presenting` true→(no attr) on
+      the same button, confirmed at both desktop and mobile width
+- [x] Keyboard shortcuts toggle — opens the dialog; close-via-X, close-via-
+      Escape, and close-via-scrim all independently confirmed
+- [x] Export view — triggered a real `download` event
 
 ## Left panel — accordion headers (collapse/expand)
 - [x] Model explorer
@@ -94,7 +98,7 @@ back.
 - [x] Axis X / Y / Z
 - [x] Flip
 - [x] Section position slider — keyboard-driven, aria-valuenow changed
-- [ ] In-viewport drag gizmo — not re-verified this pass (verified in an
+- [x] In-viewport drag gizmo — not re-verified this pass (verified in an
       earlier session; layout hasn't touched SectionGizmo.tsx since)
 
 ## MeasurePanel (right drawer)
@@ -114,30 +118,62 @@ back.
 - [x] "Connected to" link jumps selection
 
 ## Timeline transport (floating over viewport)
-- [ ] Play / Pause — not reached before disconnect
-- [ ] Reset — not reached
-- [ ] Scrubber drag — not reached
+- [x] Play / Pause — scrubber's real `aria-valuenow` advances only while
+      playing (verified against the correct slider — there are two
+      `[role=slider]` on the page, Section's and Timeline's; picking the
+      wrong one gave a false "doesn't advance" reading, corrected by
+      matching on the parent's `aria-label="Construction progress"`)
+- [x] Reset — snaps progress back to 0
+- [x] Scrubber drag/click — clicking 70% along the track sets progress to
+      0.7 (aria-valuenow)
 
 ## Viewport chrome
 - [x] Canvas click selects a member (used throughout as the click-select path)
-- [ ] Corner axis gizmo (GizmoViewport) click snaps view — not reached
-- [ ] Camera shortcuts: F, I, R, T, Y — not reached this pass (T/Y verified
-      in an earlier session)
+- [x] Corner axis gizmo (GizmoViewport, bottom-right per `DiagramScene.tsx`)
+      click snaps view — camera position jumped from `4.0,3.5,4.0` to
+      `0.0,7.7,0.0` on click
+- [x] Camera shortcuts: F (fit), I (focus selected), R (reset-view), T
+      (recenter pivot — gated on `lastClickPoint`), Y (upright) — all fire
+      their registered command; F/R re-verified this pass, T/Y verified in
+      an earlier session and unchanged
 
 ## Keyboard shortcuts (registry, commands.ts)
-- [ ] Every shortcut with a mapped command fires — not reached this pass
+- [x] Spot-checked every entry not already exercised via clicking:
+      H (hide selected — clears selection, `Steel_Column_Main_L00_A1`
+      unselectable-then-reselectable), Shift+H (show all — restores it),
+      P (section toggle — clippingPlanes 0→3362→0), Shift+X/Y/Z (section
+      axis switch — confirmed via `data-active` on the axis buttons),
+      Shift+F (flip — confirmed via `data-active`), M (measure distance
+      arm/disarm), Shift+M (measure angle — armed with real point-picking,
+      "12.44 m" real distance on GLB geometry), Ctrl+Z (undo one point —
+      Undo/Clear buttons' disabled state before/after), Delete (clear all
+      points), E (explode toggle), C (playback toggle — Play↔Pause↔Play
+      button label; an edge case at progress=1.0 looked like a no-op on
+      the first press but was just autoplay finishing instantly, not a
+      bug — confirmed clean toggle at progress=0.3), V (save viewpoint —
+      new "View N" row appeared), ? (help open), Shift+P (present toggle),
+      Esc (closes help dialog, and separately clears a selection)
 
 ## Present mode
-- [ ] Enter Present (chrome hides) — not reached
-- [ ] PresentStepper: previous — not reached
-- [ ] PresentStepper: next — not reached
-- [ ] PresentStepper: exit — not reached
+- [x] Enter Present (chrome hides, `data-presenting="true"`)
+- [x] PresentStepper: previous — cycles camera back
+- [x] PresentStepper: next — camera genuinely moves between saved
+      viewpoints (4 distinct camera pos/rot pairs sampled across
+      "Base connection A", "Services clash — L01", and two temp QA
+      viewpoints, cycling with wraparound)
+- [x] PresentStepper: exit — `data-presenting` attr removed, TopBar returns
 
-## Drawers (narrow width)
-- [ ] Left drawer opens/closes, scrim click closes it — not reached
-- [ ] Right drawer close (X) button — not reached
-- [ ] Right drawer scrim (where applicable) — not reached
+## Drawers (narrow width, tested at 700×900)
+- [x] Left drawer opens/closes — TopBar's Model-explorer toggle sets
+      `data-open` true/false; scrim click (at a point not occluded by the
+      drawer itself) closes it
+- [x] Right drawer close (X) button — closes it (`data-open` true→null)
+- [x] Right drawer scrim — closes it and clears the selection; first
+      attempt used Playwright's `force:true` click which dispatches at the
+      scrim's own center even when a higher-z-index drawer panel visually
+      covers that point, so it silently hit the drawer instead — not an
+      app bug, a test artifact from clicking through the wrong element
 
 ## Cross-cutting
-- [x] Zero console errors — checked after every single action up to the
-      disconnect, all clean
+- [x] Zero console errors — checked after every action across both passes,
+      all clean
